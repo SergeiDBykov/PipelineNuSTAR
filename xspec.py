@@ -79,7 +79,9 @@ writetext {folder}.txt 0 50 {folder}
 
 calc_flux 2 4 12 -10 {folder}
 
-calc_flux 3 4 12 -9  {folder}
+calc_flux 3 4 12 -8  {folder}
+
+calc_flux 3 7 12 -8  {folder}
 
 
 calc_eqw 2 68 {folder}
@@ -104,15 +106,18 @@ error 2,3,4,5,6,7,8,9,10,12,13,14,16,17
 
 writetext {folder}.txt 0 50 {folder}
 
+calc_eqw 2 68 {folder}
+
 calc_flux 2 4 12 -10 {folder}
 
-calc_flux 3 4 12 -9 {folder}
+calc_flux 3 4 12 -8 {folder}
+
+calc_flux 3 7 12 -8 {folder}
 
 calc_flux 3 12 79 -8 {folder}
 
-calc_flux 3 4 79 -8 {folder}
 
-calc_eqw 2 68 {folder}
+
 
 cd ../
 

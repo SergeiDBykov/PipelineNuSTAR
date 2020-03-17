@@ -40,7 +40,7 @@ nu_obs.scan_spe_results()
 
 #%% period finding: orb correction
 for mode in ['A','B']:
-    nu_obs.orb_correction_lc(filename=f'spe_and_lc{mode}_sr.bary_lc')
+    nu_obs.orb_correction_lc(filename=f'spe_and_lc{mode}_sr.bary_lc',q=0)
 
 
 #%% period finding: efsearch
@@ -53,17 +53,20 @@ nu_obs.find_period('spe_and_lc')
 
 
 
-#%% make gtis and create ph_res_script
-for mode in ['A','B']:
-    ser=nu_obs.pandas_series()
-    per_col=[col for col in ser.index.values if 'period' in col and 'lc'+mode in col and 'err' not in col]
-    period_mode=ser[per_col].values[0]
-    period_mode='%.4f'% period_mode
-    print('PERIOD '+mode, period_mode)
-period_mode=input('Enter period value for phase_resolved spectroscopy: ')
-for mode in ['A','B']:
-        nu_obs.make_gti_from_lc('spe_and_lc',mode=mode,period=period_mode)
-        nu_obs.phase_resolved_spectra(mode=mode)
+# #%% make gtis and create ph_res_script
+# for mode in ['A','B']:
+#     ser=nu_obs.pandas_series()
+#     per_col=[col for col in ser.index.values if 'period' in col and 'lc'+mode in col and 'err' not in col]
+#     period_mode=ser[per_col].values[0]
+#     period_mode='%.4f'% period_mode
+#     print('PERIOD '+mode, period_mode)
+# period_mode=input('Enter period value for phase_resolved spectroscopy: ')
+# for mode in ['A','B']:
+#         nu_obs.make_gti_from_lc('spe_and_lc',mode=mode,period=period_mode)
+#         nu_obs.phase_resolved_spectra(mode=mode)
+
+#%% fasebin for observation
+nu_obs.fasebin()
 
 #%% ph_res_ orb_ corr of lc
 os.chdir(nu_obs.products_path)
@@ -89,54 +92,38 @@ nu_obs.fit_ph_res_spe(result_name='comptt_gabslog_sigma_free', model='comptt_gab
                       xspec_comms=xspec_comm_g)
 
 
+xspec_comm_g=['newpar 3 0.3']
+nu_obs.fit_ph_res_spe(result_name='comptt_gabslog_sigma_free_temp_free', model='comptt_gabslog',
+                      lowlim=4,uplim=79,
+                      xspec_comms=xspec_comm_g)
+
+
+xspec_comm_g=['newpar 3 0.3 -1']
+nu_obs.fit_ph_res_spe(result_name='comptt_gabslog_sigma_03_temp_free', model='comptt_gabslog',
+                      lowlim=4,uplim=79,
+                      xspec_comms=xspec_comm_g)
+
+
 # xspec_comm_no_g=[f'newpar 9 {T0} -1', f'newpar 10 {kT} -1']
 # nu_obs.fit_ph_res_spe(model='comptt_gabslog_no_gauss',result_name='comptt_gabslog_no_gauss',
 #                       lowlim=4,uplim=79,
 #                       xspec_comms=xspec_comm_no_g)
 
 
-# nu_obs.fit_ph_res_spe(model='cutoffpl',result_name='cutoffpl',lowlim=4,uplim=12,
-#                       xspec_comms=['newpar 3 0.2 -1'])
-
-#%% ph_res_results
-
-nu_obs.ph_res_results(model='comptt_gabslog_sigma02')
-
-phase,mean,err=nu_obs.ph_res_results(model='comptt_gabslog_sigma_free',params='Ecycle6',funct=lambda x: x,plot=1,alpha=0.6,color='b')
-plt.show()
-
-phase,mean,err=nu_obs.ph_res_results(model='comptt_gabslog_sigma_free',params='sigma7',funct=lambda x: x,plot=1,alpha=0.6,color='b')
-plt.show()
-
-phase,mean,err=nu_obs.ph_res_results(model='comptt_gabslog_sigma_free',params='D8',funct=lambda x: x,plot=1,alpha=0.6,color='b')
-plt.show()
-
-phase,mean,err=nu_obs.ph_res_results(model='comptt_gabslog_sigma_free',params='Sigma3',funct=lambda x: x,plot=1,alpha=0.6,color='b')
-plt.show()
-
-
-phase,mean,err=nu_obs.ph_res_results(model='comptt_gabslog_sigma_free',params='eqw_gaussian',funct=lambda x: x*1000,plot=1,alpha=0.6,color='b')
-plt.show()
-
-phase,mean,err=nu_obs.ph_res_results(model='comptt_gabslog_sigma02',params='eqw_gaussian',funct=lambda x: x*1000,plot=1,alpha=0.6,color='b')
-plt.show()
-
-phase,mean,err=nu_obs.ph_res_results(model='comptt_gabslog_sigma_free',params='flux_gabslog_4_12',funct=lambda x: 10**x/1e-8,plot=1,alpha=0.6,color='b')
-plt.show()
+nu_obs.fit_ph_res_spe(model='cutoffpl',result_name='cutoffpl',lowlim=4,uplim=12,
+                      xspec_comms=['newpar 3 0.3 -1'])
 
 
 
-phase,mean,err=nu_obs.ph_res_results(model='comptt_gabslog_sigma_free',params='chi2_red',funct=lambda x: x,plot=1,alpha=0.6,color='b')
-plt.show()
-
+'''
 
 #%% lc in 4-12 keV  range
 for mode in ['A']:
     nu_obs.make_lc(mode=mode,outdir='lc412',stemout='lc412'+mode,pilow='60',pihigh='260')
 
 nu_obs.orb_correction_lc(folder='lc412',filename='lc412A_sr.lc_bary')
-
-
+'''
+'''
 #%% TRASH
 #%%scan
 
@@ -231,3 +218,6 @@ ax2=ax.twinx()
 ax2.plot(eph,er,'g:o')
 
 plt.show()
+
+
+'''

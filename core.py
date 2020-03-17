@@ -6,17 +6,20 @@ Created on Thu Feb 20 11:24:00 2020
 @author: s.bykov
 """
 
-#%% imports and definitions
+#%% imports and definitions bla bla blah
 import astropy.io.fits as fits
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
 import pandas as pd
 from glob import glob
 import os
-import Miscellaneous
-from Miscellaneous import  doppler_correction
+from Misc.TimeSeries import cross_corr
+from Misc import  doppler_correction
 from scipy.optimize import curve_fit
 import PipelineNuSTAR.xspec  as nu_xspec
+import seaborn as sns
+sns.set(style='ticks', palette='deep',context='notebook')
 
 
 #from scipy.optimize import curve_fit
@@ -486,7 +489,7 @@ class NustarObservation():
             orb_params=doppler_correction.orb_params_v0332
             doppler_correction.correct_times(fitsfile=filename,orb_params=orb_params,time_orig_col='time')
 
-    def orb_correction_lc(self,filename,folder='spe_and_lc'):
+    def orb_correction_lc(self,filename,folder='spe_and_lc',q=1):
         '''
         I use the correction of LC file because the correction of event files
         would take a lot of time
@@ -496,13 +499,20 @@ class NustarObservation():
         os.chdir(folder)
 
         #filename=glob(f'*{mode}_sr*bary*')[0]
-        q=input(f'Do you want to start doppler correction of {filename}?')
+        if q==1:
+            q=input(f'Do you want to start doppler correction of {filename}?')
+            if q=='y' or q=='yes':
+                q=1
+            else:
+                q=0
+        else:
+            q=1
         if q:
             orb_params=doppler_correction.orb_params_v0332
             doppler_correction.correct_times(fitsfile=filename,orb_params=orb_params,time_orig_col='time')
 
 
-    def make_gti_from_lc(self,folder,mode,
+    def _make_gti_from_lc(self,folder,mode,
                          period,phase_bins=8,
                          outfolder='gtis/',
                          half_shift=0):
@@ -568,7 +578,7 @@ class NustarObservation():
         print(f'GTIs have been created for module {mode} with period {period} and {phase_bins} bins')
 
 
-    def phase_resolved_spectra(self,gtipath='spe_and_lc/gtis',folder='phase_resolved',mode='A'):
+    def _phase_resolved_spectra(self,gtipath='spe_and_lc/gtis',folder='phase_resolved',mode='A'):
         os.chdir(self.out_path)
         os.chdir('products')
         create_dir(folder)
@@ -591,6 +601,20 @@ class NustarObservation():
             #self.make_lc(outdir=folder,usrgtifile=gtifile,
             #              stemout=f'phase_resolved_{mode}_bin{ph_num}',
             #              mode=mode,usrgtibarycorr='no')
+
+    def fasebin(self):
+        for mode in ['A','B']:
+            ser=self.pandas_series()
+            per_col=[col for col in ser.index.values if 'period' in col and 'lc'+mode in col and 'err' not in col]
+            period_mode=ser[per_col].values[0]
+            period_mode='%.4f'% period_mode
+            print('PERIOD '+mode, period_mode)
+        period_mode=input('Enter period value for phase_resolved spectroscopy: ')
+        for mode in ['A','B']:
+                self._make_gti_from_lc('spe_and_lc',mode=mode,period=period_mode)
+                self._phase_resolved_spectra(mode=mode)
+
+
 
     def fit_ph_res_spe(self,spe_folder='phase_resolved',
                        result_name='comptt_gabslog',model='comptt_gabslog',
@@ -624,10 +648,10 @@ class NustarObservation():
 
 
 
-    def ph_res_results(self,
+    def ph_res_param(self,
                        spe_folder='phase_resolved',
-                       model='cutoffpl',
-                       params='DEFAULT',
+                       model='comptt_gabslog_sigma_free',
+                       param='DEFAULT',
                        funct=lambda x:x,
                        nph=8,
                        plot=1, ax=None,**plt_kwargs):
@@ -636,7 +660,7 @@ class NustarObservation():
 
 
         collist=ser.index.values
-        if params=='DEFAULT':
+        if param=='DEFAULT':
 
             params=[col for col in collist if 'bin1' in col and model in col and '_lo' not in col and '_hi' not in col]
 
@@ -647,8 +671,6 @@ class NustarObservation():
 
 
         def get_parr_array(ser,parname,funct):
-            mean_out=np.zeros(nph)
-            err_out=np.zeros((nph,2))
 
             cols_mean=[col for col in ser.index if 'bin' in col and parname in col and '_lo' not in col and '_hi' not in col and model in col]
             mean=ser[cols_mean].values
@@ -662,7 +684,7 @@ class NustarObservation():
 
             lo=ser[cols_lo].values
             lo=funct(lo)
-            #kkk
+
             cols_hi=[col for col in ser.index if 'bin' in col and parname in col and '_hi'  in col and model in col]
             hi=ser[cols_hi].values
             hi=funct(hi)
@@ -677,23 +699,165 @@ class NustarObservation():
             return mean,err
 
         phase=np.arange(0,nph)/nph
-        mean,err=get_parr_array(ser,params,funct)
+        mean,err=get_parr_array(ser,param,funct)
 
         phase=np.concatenate((phase,phase+1))
         mean=np.concatenate((mean,mean))
-        #err=np.concatenate((err,err))
         err=np.hstack((err,err))
 
         if plot:
             if ax==None:
                 fig,ax=plt.subplots(figsize=(12,4))
-                ax.set_title(f'ObsID: {self.ObsID}, model: {model}, parameter: {params}')
-            ax.errorbar(phase,mean,
-            yerr=err,drawstyle='steps-mid',**plt_kwargs)
-
-
+                ax.set_title(f'ObsID: {self.ObsID}, model: {model}, parameter: {param}')
+            ax.errorbar(phase,mean,yerr=err,drawstyle='steps-mid',**plt_kwargs)
 
         return phase,mean,err
+
+    def ph_res_results(self,model='comptt_gabslog_sigma_free',rewrite=1):
+        '''
+        comptt:
+        ph_res_params=['exposure', 'MJD', 'chi2_red', 'dof', 'factor1',
+'LineE2', 'Sigma3', 'norm4',
+'D5', 'Ecycle6', 'sigma7',
+'D8', 'Ecycle9', 'sigma10',
+'T012', 'kT13', 'taup14', 'norm16', 'factor17',
+'eqw_gaussian', 'flux_gabslog_12_79', 'flux_gabslog_4_12',
+ 'flux_gabslog_4_79', flux_gabslog_7_12, 'flux_gaussian_4_12']
+
+        cutoffpl:
+            ['exposure', 'MJD', 'chi2_red', 'dof', 'factor1',
+            'LineE2', 'Sigma3', 'norm4',
+            'PhoIndex5', 'HighECut6', 'norm7', 'factor8',
+            'eqw_gaussian', 'flux_cutoffpl_4_12', 'flux_gaussian_4_12']
+        '''
+        savepath='/Users/s.bykov/work/xray_pulsars/nustar/plots_results/'
+        os.chdir(self.out_path+'/products/phase_resolved/')
+
+        matplotlib.rcParams['figure.figsize'] = 6.6, 6.6
+        matplotlib.rcParams['figure.subplot.left']=0.1
+        matplotlib.rcParams['figure.subplot.bottom']=0.1
+        matplotlib.rcParams['figure.subplot.right']=0.9
+        matplotlib.rcParams['figure.subplot.top']=0.85
+
+        self.scan_spe_results()
+#        ser=self.pandas_series()
+
+        if rewrite:
+            fname=self.fasebin_info_file
+            os.system(f'> {fname}') #remove content from fasebin_info
+
+        if model=='comptt_gabslog':
+
+            fig = plt.figure()
+            rows=8
+            cols=3
+            ax_eqw = plt.subplot2grid((rows,cols), (0, 0), rowspan=2, colspan=3)
+            ax_flux=ax_eqw.twinx()
+
+            ax_eqw.set_title(self.ObsID+f'\n  model: {model}')
+            self.ph_res_param(model=model,param='eqw_gauss',funct=lambda x: 1000*x,
+                              ax=ax_eqw,color='r',alpha=1)
+            ax_eqw.set_ylabel('Iron line eqw',color='r')
+
+            self.ph_res_param(model=model,param='flux_gabslog_7_12',funct=lambda x: 10**x/1e-8,
+                              ax=ax_flux,color='k',alpha=0.6)
+            ax_flux.set_ylabel('flux 7-12 ',color='k')
+
+            ax_sigma=plt.subplot2grid((rows,cols), (2, 0), rowspan=2, colspan=3)
+
+            ax_norm=ax_sigma.twinx()
+
+            self.ph_res_param(model=model,param='Sigma3',funct=lambda x: x,
+                              ax=ax_sigma,color='b',alpha=0.8)
+            ax_sigma.set_ylabel('Iron line Sigma',color='b')
+
+            self.ph_res_param(model=model,param='norm4',funct=lambda x: 1000*x,
+                              ax=ax_norm,color='g',alpha=0.6)
+            ax_norm.set_ylabel('Iron line norm *1000',color='g')
+
+
+            ax_chi=plt.subplot2grid((rows,cols), (4, 0), rowspan=2, colspan=3)
+            self.ph_res_param(model=model,param='chi2_red',
+                              ax=ax_chi,color='m',alpha=0.9)
+            ax_chi.set_ylabel('chi^2/dof',color='m')
+
+
+            ax_T0 = plt.subplot2grid((rows,cols), (6, 0), rowspan=2, colspan=3)
+            ax_kT=ax_T0.twinx()
+
+            self.ph_res_param(model=model,param='T012',funct=lambda x: x,
+                              ax=ax_T0,color='c',alpha=1)
+            ax_T0.set_ylabel('CompTT T0',color='c')
+
+            self.ph_res_param(model=model,param='kT13',funct=lambda x: x,
+                              ax=ax_kT,color='m',alpha=1)
+            ax_kT.set_ylabel('CompTT kT',color='m')
+
+        if model=='cutoffpl':
+            fig = plt.figure()
+            rows=8
+            cols=3
+            ax_eqw = plt.subplot2grid((rows,cols), (0, 0), rowspan=2, colspan=3)
+            ax_flux=ax_eqw.twinx()
+
+            ax_eqw.set_title(self.ObsID+f'\n  model: {model}')
+            self.ph_res_param(model=model,param='eqw_gauss',funct=lambda x: 1000*x,
+                              ax=ax_eqw,color='r',alpha=1)
+            ax_eqw.set_ylabel('Iron line eqw',color='r')
+
+            self.ph_res_param(model=model,param='flux_cutoffpl_4_12',funct=lambda x: 10**x/1e-8,
+                              ax=ax_flux,color='k',alpha=0.6)
+            ax_flux.set_ylabel('flux 4-12 ',color='k')
+
+            ax_sigma=plt.subplot2grid((rows,cols), (2, 0), rowspan=2, colspan=3)
+
+            ax_norm=ax_sigma.twinx()
+
+            self.ph_res_param(model=model,param='Sigma3',funct=lambda x: x,
+                              ax=ax_sigma,color='b',alpha=0.8)
+            ax_sigma.set_ylabel('Iron line Sigma',color='b')
+
+            self.ph_res_param(model=model,param='norm4',funct=lambda x: 1000*x,
+                              ax=ax_norm,color='g',alpha=0.6)
+            ax_norm.set_ylabel('Iron line norm *1000',color='g')
+
+
+            ax_chi=plt.subplot2grid((rows,cols), (4, 0), rowspan=2, colspan=3)
+            self.ph_res_param(model=model,param='chi2_red',
+                              ax=ax_chi,color='m',alpha=0.9)
+            ax_chi.set_ylabel('chi^2/dof',color='m')
+
+            #'PhoIndex5', 'HighECut6'
+            ax_PI = plt.subplot2grid((rows,cols), (6, 0), rowspan=2, colspan=3)
+            ax_ecut=ax_PI.twinx()
+
+            self.ph_res_param(model=model,param='PhoIndex5',funct=lambda x: x,
+                              ax=ax_PI,color='c',alpha=1)
+            ax_PI.set_ylabel('phot. index',color='c')
+
+            self.ph_res_param(model=model,param='HighECut6',funct=lambda x: x,
+                              ax=ax_ecut,color='m',alpha=1)
+            ax_ecut.set_ylabel('E_cut',color='m')
+
+
+
+        # ax = plt.gca()
+        # ax.grid(axis='x')
+        fig.tight_layout()
+        sns.despine(fig,top=1,right=0)
+        plt.savefig(savepath+f'ph_res_{self.ObsID}_{model}.png',dpi=700)
+
+        # ax_chi=plt.subplot2grid((rows,cols), (1, 0), rowspan=1, colspan=3)
+        # ax_ccf=plt.subplot2grid((rows,cols), (3, 2), rowspan=2, colspan=3)
+        # ax_ecutpars=plt.subplot2grid((rows,cols), (2, 0), rowspan=1, colspan=3)
+        # ax_flux=plt.subplot2grid((rows,cols), (0, 3), rowspan=2, colspan=2)
+        # ax_per=ax_flux.twinx()
+        # #ax_chi_hist=plt.subplot2grid((rows,cols), (2, 3), rowspan=1, colspan=1)
+        # ax_per_find=plt.subplot2grid((rows,cols), (2, 4), rowspan=1, colspan=1)
+        # ax_po_and_norm=plt.subplot2grid((rows,cols), (5, 0), rowspan=1, colspan=3)
+
+
+
 
 
 
