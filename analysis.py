@@ -6,13 +6,22 @@ Created on Thu Feb 20 11:24:00 2020
 @author: s.bykov
 """
 from PipelineNuSTAR.core import *
-from Miscellaneous import pd_to_latex
+#from Miscellaneous import pd_to_latex
+
+matplotlib.rcParams['figure.figsize'] = 6.6, 6.6/2
+matplotlib.rcParams['figure.subplot.left']=0.15
+matplotlib.rcParams['figure.subplot.bottom']=0.15
+matplotlib.rcParams['figure.subplot.right']=0.85
+matplotlib.rcParams['figure.subplot.top']=0.95
+
 import seaborn as sns
-sns.set_palette("pastel")
+sns.set(style='ticks', palette='deep',context='notebook')
+
 
 ObsList=['80102002002','80102002004','80102002006','80102002008',
          '80102002010','90202031002','90202031004'] #all obsevations
 
+savepath=f'/Users/s.bykov/work/xray_pulsars/nustar/plots_results/'
 
 
 
@@ -45,66 +54,68 @@ ObsParams=pd.read_pickle(results_path+f'{filename}.pkl')
 
 
 
-#%% plot bat flux
+#%% plot bat and nustar flux
+fig, ax_bat = plt.subplots()
+ax=ax_bat.twinx()
 
+time=ObsParams.MJD_START
+fl,fl_err=vals_and_errors(ObsParams,'comptt_gabslog_sigma03_flux_gabslog_12_79',
+                          funct=lambda x: 10**x/1e-9)
+
+ax.errorbar(time,fl,fl_err,fmt='.',color='g',marker='s',ms=5)
+
+ax.set_ylabel('NuSTAR Flux (12-79 keV), \n 10^(-9) cgs',color='g')
+ax.set_xlabel('Time, MJD')
 
 batlc=np.genfromtxt('/Users/s.bykov/work/xray_pulsars/nustar/data/V0332p53.lc.txt')
-savepath=f'/Users/s.bykov/work/xray_pulsars/nustar/plots_results/'
 batdays=batlc[:,0]
 batrate=batlc[:,1]
 baterror=batlc[:,2]
 
-matplotlib.rcParams['figure.subplot.left']=0.15
-matplotlib.rcParams['figure.subplot.right']=0.95
 
-fig, ax = plt.subplots(1,gridspec_kw={'hspace': 0, 'wspace': 0})
-# ax_bat=ax.twinx()
-# ax_bat,ax=ax,ax_bat
-# time=ObsParams.MJD_START
-# fl,fl_err=vals_and_errors(ObsParams,'comptt_gabslog_sigma02_flux_gabslog_12_79',funct=lambda x: 10**x/1e-9)
-ax_bat.errorbar(time,fl,fl_err,fmt='.',color='g')
-ax.errorbar(batdays,batrate,baterror,fmt='.',alpha=0.7)
+
+time=ObsParams.MJD_START
+ax_bat.errorbar(batdays,batrate,baterror,fmt='.',color='b',alpha=0.7)
 #ax.set_yscale('log')
-ax.set_xlim(57180,57610)
-ax.set_ylim(-0.001,0.25)
-ax.set_xlabel('Time, MJD')
-ax.set_ylabel('BAT rate (15-50 keV) \n counts/s/cm^2')
+ax_bat.set_xlim(57180,57320)
+ax_bat.set_ylim(-0.001,0.25)
 
-fig.savefig(savepath+f'bat_lc.png')
+ax_bat.set_ylabel('BAT rate (15-50 keV) \n counts/s/cm^2',color='b')
+
+ax.legend()
+fig.tight_layout()
+sns.despine(fig,top=1,right=0)
+plt.savefig(savepath+f'bat_lc.png',dpi=500)
+
 plt.show()
 
 
 #%% plot eqw stuff
 
-
-
-eqw,eqw_err=vals_and_errors(ObsParams,'comptt_gabslog_sigma02_eqw_gaussian',funct=lambda x: 1e3*x)
-
 fig, ax = plt.subplots(1,gridspec_kw={'hspace': 0, 'wspace': 0})
-ax_bat=ax.twinx()
-ax.errorbar(time,eqw,eqw_err,fmt='.',label='eqw_sigma_0.2',alpha=0.7)
-
-ax_bat.errorbar(batdays,batrate,baterror,fmt='.',color='g',alpha=0.7)
-ax.set_xlim(57180,57610)
-
-
-plt.show()
-
-
 
 time=ObsParams.MJD_START
+
+eqw,eqw_err=vals_and_errors(ObsParams,'comptt_gabslog_sigma03_eqw_gaussian',funct=lambda x: 1e3*x)
+
+ax.errorbar(time,eqw,eqw_err,fmt='.',color='c',marker='s',ms=4,label='Sigma=0.3 keV',alpha=0.8)
+
+
+
 eqw,eqw_err=vals_and_errors(ObsParams,'comptt_gabslog_eqw_gaussian',funct=lambda x: 1e3*x)
 
-#fig, ax = plt.subplots(1,gridspec_kw={'hspace': 0, 'wspace': 0})
-ax_bat=ax.twinx()
-ax.errorbar(time,eqw,eqw_err,fmt='.',color='m',label='eqw_sigma_free',alpha=0.7)
+ax.errorbar(time,eqw,eqw_err,fmt='.',color='y',marker='s',ms=4,label='Sigma free',alpha=0.8)
 
-ax.set_ylabel('Eq width, eV')
-ax_bat.set_ylim(-0.001,0.25)
-ax_bat.set_xlabel('Time, MJD')
-ax_bat.set_ylabel('BAT rate (15-50 keV) \n counts/s/cm^2')
+ax.legend(loc='best')
+ax.set_xlim(57200,57320)
+ax.set_ylabel('Iron line equivalent width \n eV',color='k')
+ax.set_xlabel('Time, MJD')
 
-from Miscellaneous.doppler_correction import orb_params_v0332
+
+
+
+
+from Misc.doppler_correction import orb_params_v0332
 T_p=orb_params_v0332['T_p']/86400
 P=orb_params_v0332['P']/86400
 
@@ -113,14 +124,145 @@ for i in range(1,15):
     ax.axvline(T_p+i*P,color='k',ls=':',alpha=0.3)
 
 
-ax.legend()
-fig.savefig(savepath+f'eqw.png')
+
+fig.tight_layout()
+sns.despine(fig,top=1,right=0)
+plt.savefig(savepath+f'eqw.png',dpi=500)
+
 plt.show()
 
 
+#%%plot iron line stuff
+
+for par in ['Sigma3','LineE2']:
+    fig, ax = plt.subplots(1,gridspec_kw={'hspace': 0, 'wspace': 0})
+
+    time=ObsParams.MJD_START
+
+    eqw,eqw_err=vals_and_errors(ObsParams,'comptt_gabslog_sigma03_'+par,funct=lambda x: x)
+
+    ax.errorbar(time,eqw,eqw_err,fmt='.',color='c',marker='s',ms=4,label='Sigma=0.3 keV',alpha=0.8)
 
 
 
+    eqw,eqw_err=vals_and_errors(ObsParams,'comptt_gabslog_'+par,funct=lambda x: x)
+
+    ax.errorbar(time,eqw,eqw_err,fmt='.',color='y',marker='s',ms=4,label='Sigma free',alpha=0.8)
+
+    ax.legend(loc='best')
+    ax.set_xlim(57200,57320)
+    ax.set_ylabel('Iron line '+par ,color='k')
+    ax.set_xlabel('Time, MJD')
+    plt.show()
+
+#%% ============LATEX TABLES ============
+from Misc.TeX_Tables import pandas_to_tex
+from Misc.TeX_Tables.pandas_to_tex import *
+
+
+def tex_line():
+    null=lambda x: x
+    free_columns=['ObsID',model+'MJD',model+'exposure',model+'chi2_red']
+    free_columns_functions=[null,null,lambda x: x/1000,null]
+    free_columns_formats=[0,1,0,2]
+
+    err_columns=['LineE2','Sigma3','norm4','eqw_gaussian',
+                 ]
+    err_functions=[null,null,lambda x: 1000*x, lambda x: 1000*x,
+                   ]
+    err_formats=[2,2,1,0]
+
+    err_columns=[model+item for item in err_columns]
+
+    headers=['ObsID','Time, MJD','Exposure, ks','$\chi^2_{red}$',
+                  'Iron Line: energy','Iron Line: sigma','Iron Line: norm','Iron Line: eq. width',
+                 ]
+
+
+
+    transpose=1
+    df_tex=make_latex_table(df,
+                          free_columns=free_columns, free_columns_functions=free_columns_functions,
+                          free_columns_formats=free_columns_formats,
+                          err_columns=err_columns, err_functions=err_functions,
+                          err_formats=err_formats)
+    df_tex.columns=headers
+    save_latex_table(df_tex, savepath=savepath+'/tex/linepars_'+name,
+                     columns_to_write='DEFAULT',
+                     columns_names='DEFAULT',
+                     transpose=transpose)
+
+
+
+
+def tex_all():
+    null=lambda x: x
+    free_columns=['ObsID',model+'MJD',model+'exposure',model+'chi2_red']
+    free_columns_functions=[null,null,lambda x: x/1000,null]
+    free_columns_formats=[0,1,0,2]
+
+    err_columns=['D5','Ecycle6','sigma7',
+                 'D8','Ecycle9','sigma10',
+                 'T012','kT13','taup14',
+                 'factor17']
+    err_functions=[null,null,null,
+                   null,null,null,
+                   null,null,null,
+                   null]
+    err_formats=[3,2,1,
+                 3,2,1,
+                 2,2,1,
+                 3]
+
+    err_columns=[model+item for item in err_columns]
+
+    headers=['ObsID','Time, MJD','Exposure, ks','$\chi^2_{red}$',
+                 'CRSF: depth', 'CRSF: energy','CRSF : sigma',
+                 'CRSF (1h): depth', 'CRSF (1h): energy','CRSF (1h) : sigma',
+                 'compTT: $T_0$', 'compTT: kT', 'compTT: $\tau$',
+                 'C(FPMA/FPMB)']
+
+
+
+    transpose=1
+    df_tex=make_latex_table(df,
+                          free_columns=free_columns, free_columns_functions=free_columns_functions,
+                          free_columns_formats=free_columns_formats,
+                          err_columns=err_columns, err_functions=err_functions,
+                          err_formats=err_formats)
+    df_tex.columns=headers
+    save_latex_table(df_tex, savepath=savepath+'/tex/allpars_'+name,
+                     columns_to_write='DEFAULT',
+                     columns_names='DEFAULT',
+                     transpose=transpose)
+
+
+
+#%% latex tables, sigma free
+
+indexNames = pd.core.indexes.base.Index(['obs80102002008', 'obs90202031002', 'obs90202031004'])
+df=ObsParams.drop(indexNames , inplace=False)
+model='comptt_gabslog_'
+ParList=[col for col in df.columns if 'bin' not in col and model in col and 'sigma' not in col and '_hi' not in col and '_lo' not in col  ]
+name='free_sigma.tex'
+tex_line()
+tex_all()
+
+
+#%% latex tables, sigma fix
+
+#indexNames = ObsParams[ ObsParams['ObsID'] > 80102002007 ].index
+#df=ObsParams.drop(indexNames , inplace=False)
+df=ObsParams
+model='comptt_gabslog_sigma03_'
+ParList=[col for col in df.columns if 'bin' not in col and model in col and '_hi' not in col and '_lo' not in col  ]
+name='fix_sigma.tex'
+tex_line()
+tex_all()
+
+
+#%% trash
+'''
 #%% latex table constant sigma
 from Miscellaneous import pd_to_latex as latex
 transpose=1
@@ -202,3 +344,4 @@ la_pd=latex.make_latex_table(ObsParams,
 tablename=model
 la_pd.to_latex(escape = False, index = transpose)
 la_pd.to_latex(buf=savepath+tablename+'.tex',escape = False, index = transpose)
+'''

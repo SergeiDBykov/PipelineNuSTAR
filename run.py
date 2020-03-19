@@ -14,7 +14,7 @@ ObsList=['80102002002','80102002004','80102002006','80102002008',
 
 
 #%% select ObsID
-ObsID=ObsList[0]
+ObsID=ObsList[3]
 nu_obs=NustarObservation(ObsID)
 
 STOP
@@ -33,6 +33,8 @@ nu_obs.fit_spe(spe_folder='spe_and_lc',result_name='comptt_gabslog',model='compt
 nu_obs.fit_spe(spe_folder='spe_and_lc',result_name='comptt_gabslog_sigma02',model='comptt_gabslog',lowlim='4',uplim='79',
                xspec_comms=['newpar 3 0.2 -1'])
 
+nu_obs.fit_spe(spe_folder='spe_and_lc',result_name='comptt_gabslog_sigma03',model='comptt_gabslog',lowlim='4',uplim='79',
+               xspec_comms=['newpar 3 0.3 -1'])
 
 #%% write fit results to spe info file
 nu_obs.scan_spe_results()
@@ -77,17 +79,18 @@ for filename in files:
 
 
 #%% ph_res fit
+nu_obs.scan_spe_results()
 ser=nu_obs.pandas_series()
-kT=ser.comptt_gabslog_sigma02_kT13
-T0=ser.comptt_gabslog_sigma02_T012
+kT=ser.comptt_gabslog_kT13
+T0=ser.comptt_gabslog_T012
 
-xspec_comm_g=[f'newpar 12 {T0} -1', f'newpar 13 {kT} -1','newpar 3 0.2 -1']
-nu_obs.fit_ph_res_spe(result_name='comptt_gabslog_sigma02', model='comptt_gabslog',
-                      lowlim=4,uplim=79,
-                      xspec_comms=xspec_comm_g)
+# xspec_comm_g=[f'newpar 12 {T0} -1', f'newpar 13 {kT} -1','newpar 3 0.2 -1']
+# nu_obs.fit_ph_res_spe(result_name='comptt_gabslog_sigma02', model='comptt_gabslog',
+#                       lowlim=4,uplim=79,
+#                       xspec_comms=xspec_comm_g)
 
 xspec_comm_g=[f'newpar 12 {T0} -1', f'newpar 13 {kT} -1','newpar 3 0.3']
-nu_obs.fit_ph_res_spe(result_name='comptt_gabslog_sigma_free', model='comptt_gabslog',
+nu_obs.fit_ph_res_spe(result_name='comptt_gabslog_sigma_free_temp_fix', model='comptt_gabslog',
                       lowlim=4,uplim=79,
                       xspec_comms=xspec_comm_g)
 
@@ -104,27 +107,74 @@ nu_obs.fit_ph_res_spe(result_name='comptt_gabslog_sigma_03_temp_free', model='co
                       xspec_comms=xspec_comm_g)
 
 
+nu_obs.fit_ph_res_spe(model='cutoffpl',result_name='cutoffpl_sigma_free',lowlim=4,uplim=12,
+                      xspec_comms=['newpar 3 0.3 '])
+
+nu_obs.fit_ph_res_spe(model='cutoffpl',result_name='cutoffpl_sigma_03',lowlim=4,uplim=12,
+                      xspec_comms=['newpar 3 0.3 -1'])
+
 # xspec_comm_no_g=[f'newpar 9 {T0} -1', f'newpar 10 {kT} -1']
 # nu_obs.fit_ph_res_spe(model='comptt_gabslog_no_gauss',result_name='comptt_gabslog_no_gauss',
 #                       lowlim=4,uplim=79,
 #                       xspec_comms=xspec_comm_no_g)
 
 
-nu_obs.fit_ph_res_spe(model='cutoffpl',result_name='cutoffpl',lowlim=4,uplim=12,
-                      xspec_comms=['newpar 3 0.3 -1'])
+#%% ph res spectra results
+nu_obs.scan_spe_results()
+ser=nu_obs.pandas_series()
+for model in ['comptt_gabslog_sigma_free_temp_free',
+              'comptt_gabslog_sigma_free_temp_fix',
+              'comptt_gabslog_sigma_03_temp_free',
+              'cutoffpl_sigma_free',
+              'cutoffpl_sigma_03']:
+    try:
+        nu_obs.ph_res_results(model=model)
+        plt.show()
+    except:
+        print(f'model {model} not found')
 
+#%% check efold and flux
 
+fig,ax=plt.subplots()
 
-'''
+#ax_efold=ax.twinx()
+ax_efold=ax
+try:
+    phase,flux,err=nu_obs.ph_res_param(model='comptt_gabslog_sigma_free_temp_free',
+                                   param='flux_gabslog_4_12',ax=ax,
+                                   funct=lambda x: 10**x/np.mean(10**x),color='k',lw=2)
+except:
+    phase,flux,err=nu_obs.ph_res_param(model='cutoffpl_sigma_free',
+                                   param='flux_cutoffpl_4_12',ax=ax,
+                                   funct=lambda x: 10**x/np.mean(10**x),color='k',lw=2)
+
+for file in [nu_obs.products_path+'/lc412/efold.dat',nu_obs.products_path+'/lc412/efold_25.dat']:
+    efold_file=np.genfromtxt(file)
+
+    efph=efold_file[:,0]
+    efr=efold_file[:,2]
+    eferr=efold_file[:,3]
+    ax_efold.errorbar(efph,efr,yerr=eferr,drawstyle='steps-mid',color=numpy.random.rand(3,))
+
+# # =============================================================================
+# # efolds for obs 802 were displaced by halfbin: 802: 17223.41217923250(indef)+4.3764/8/2/86400 as a null phase value
+# #   804  17275.94671724814+4.3759/8/2/86400-2*4.3759/8/86400 (2 bins shift)
+# # =============================================================================
+plt.show()
 
 #%% lc in 4-12 keV  range
+
 for mode in ['A']:
     nu_obs.make_lc(mode=mode,outdir='lc412',stemout='lc412'+mode,pilow='60',pihigh='260')
 
 nu_obs.orb_correction_lc(folder='lc412',filename='lc412A_sr.lc_bary')
+
+
+
+
+#%%
+# TRASH
 '''
-'''
-#%% TRASH
 #%%scan
 
 

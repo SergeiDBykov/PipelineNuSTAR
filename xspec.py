@@ -14,7 +14,7 @@ Created on Fri Feb 21 13:52:17 2020
 def xspec_init(folder,sp1,sp2,lowlim=4,uplim=79):
 
     return f'''
-xspec
+#xspec
 
 @/Users/s.bykov/work/my_scripts/xspec/xspec_utils.tcl
 data 1:1 {sp1}
@@ -25,9 +25,7 @@ ign *: **-{lowlim}. {uplim}.-**
 ign bad
 setpl en
 
-rm -rf {folder}/
-mkdir {folder}/
-cd {folder}/
+rm -rf {folder}/ ; mkdir {folder}/ ;  cd {folder}/
 
 '''
 
@@ -49,11 +47,11 @@ parallel error 6
 error 2,3,4,5,6
 
 writetext {folder}.txt 0 50 {folder}
+save model mymodel.xcm
 
-calc_flux 2 4 12 -10 {folder}
 
 calc_flux 3 4 12 -9  {folder}
-
+calc_flux 2 4 12 -10 {folder}
 
 calc_eqw 2 68 {folder}
 
@@ -77,14 +75,16 @@ error 2,3,4,5,6,7
 
 writetext {folder}.txt 0 50 {folder}
 
-calc_flux 2 4 12 -10 {folder}
+save model mymodel.xcm
+
+calc_eqw 2 68 {folder}
+
 
 calc_flux 3 4 12 -8  {folder}
 
 calc_flux 3 7 12 -8  {folder}
 
-
-calc_eqw 2 68 {folder}
+calc_flux 2 4 12 -10 {folder}
 
 cd ../
 
@@ -102,13 +102,15 @@ fit 1000
 parallel error 15
 
 
-error 2,3,4,5,6,7,8,9,10,12,13,14,16,17
+error 2,3,4,5,6,7,12,13,14,16,17 #,8,9,10
 
 writetext {folder}.txt 0 50 {folder}
 
+save model mymodel.xcm
+
+
 calc_eqw 2 68 {folder}
 
-calc_flux 2 4 12 -10 {folder}
 
 calc_flux 3 4 12 -8 {folder}
 
@@ -116,7 +118,7 @@ calc_flux 3 7 12 -8 {folder}
 
 calc_flux 3 12 79 -8 {folder}
 
-
+calc_flux 2 4 12 -10 {folder}
 
 
 cd ../
@@ -141,48 +143,19 @@ error 2,3,4,5,6,7,9,10,12,13,14
 
 writetext {folder}.txt 0 50 {folder}
 
+save model mymodel.xcm
 
-calc_flux 2 4 12 -9 {folder}
 
 calc_flux 2 12 79 -8 {folder}
 
 calc_flux 2 4 79 -8 {folder}
 
+calc_flux 2 4 12 -9 {folder}
 
-cd ../
+#cd ../
 
 '''
-    return load_model+'\n exit'
+    return load_model#+'\n exit'
 
-
-
-# def xspec_init_phase_resolved(nbins='8',lowlim='4',uplim='79'):
-#     iterate_data=f'''
-#     @/Users/s.bykov/work/my_scripts/xspec/xspec_utils.tcl
-#     set i 1
-
-# set nph {{nbins}}
-
-# chatter 10
-
-# query yes
-
-
-# while {{$i<=$nph}}  {{echo $i
-# data 1:1 phase_resolved_A_bin${{i}}
-# data 2:2 phase_resolved_B_bin${{i}}
-# ign *: **-{{lowlim}}. {{uplim}}.-**
-# ign bad
-
-
-
-
-
-
-# '''+'''
-
-# incr i
-# }}
-# '''
 
 

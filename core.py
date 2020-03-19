@@ -22,9 +22,6 @@ import seaborn as sns
 sns.set(style='ticks', palette='deep',context='notebook')
 
 
-#from scipy.optimize import curve_fit
-#import shutil
-#import subprocess
 
 from subprocess import call
 #%% functions
@@ -699,8 +696,10 @@ class NustarObservation():
             return mean,err
 
         phase=np.arange(0,nph)/nph
-        mean,err=get_parr_array(ser,param,funct)
-
+        try:
+            mean,err=get_parr_array(ser,param,funct)
+        except:
+            raise Exception('Error with get par')
         phase=np.concatenate((phase,phase+1))
         mean=np.concatenate((mean,mean))
         err=np.hstack((err,err))
@@ -728,7 +727,7 @@ class NustarObservation():
             ['exposure', 'MJD', 'chi2_red', 'dof', 'factor1',
             'LineE2', 'Sigma3', 'norm4',
             'PhoIndex5', 'HighECut6', 'norm7', 'factor8',
-            'eqw_gaussian', 'flux_cutoffpl_4_12', 'flux_gaussian_4_12']
+            'eqw_gaussian', 'flux_cutoffpl_4_12', flux_cutoffpl_7_12, 'flux_gaussian_4_12']
         '''
         savepath='/Users/s.bykov/work/xray_pulsars/nustar/plots_results/'
         os.chdir(self.out_path+'/products/phase_resolved/')
@@ -746,7 +745,7 @@ class NustarObservation():
             fname=self.fasebin_info_file
             os.system(f'> {fname}') #remove content from fasebin_info
 
-        if model=='comptt_gabslog':
+        if 'comptt_gabslog' in model:
 
             fig = plt.figure()
             rows=8
@@ -793,7 +792,7 @@ class NustarObservation():
                               ax=ax_kT,color='m',alpha=1)
             ax_kT.set_ylabel('CompTT kT',color='m')
 
-        if model=='cutoffpl':
+        if 'cutoffpl' in model:
             fig = plt.figure()
             rows=8
             cols=3
@@ -805,9 +804,9 @@ class NustarObservation():
                               ax=ax_eqw,color='r',alpha=1)
             ax_eqw.set_ylabel('Iron line eqw',color='r')
 
-            self.ph_res_param(model=model,param='flux_cutoffpl_4_12',funct=lambda x: 10**x/1e-8,
+            self.ph_res_param(model=model,param='flux_cutoffpl_7_12',funct=lambda x: 10**x/1e-8,
                               ax=ax_flux,color='k',alpha=0.6)
-            ax_flux.set_ylabel('flux 4-12 ',color='k')
+            ax_flux.set_ylabel('flux 7-12 ',color='k')
 
             ax_sigma=plt.subplot2grid((rows,cols), (2, 0), rowspan=2, colspan=3)
 
@@ -845,7 +844,7 @@ class NustarObservation():
         # ax.grid(axis='x')
         fig.tight_layout()
         sns.despine(fig,top=1,right=0)
-        plt.savefig(savepath+f'ph_res_{self.ObsID}_{model}.png',dpi=700)
+        plt.savefig(savepath+f'ph_res_{self.ObsID}_{model}.png',dpi=500)
 
         # ax_chi=plt.subplot2grid((rows,cols), (1, 0), rowspan=1, colspan=3)
         # ax_ccf=plt.subplot2grid((rows,cols), (3, 2), rowspan=2, colspan=3)
