@@ -692,6 +692,8 @@ class NustarObservation():
 
 
             err=np.vstack((lo,hi))
+            if len(mean)!=nph:
+                raise Exception(f'Parameter {parname} has less than {nph} values!')
 
             return mean,err
 
@@ -699,7 +701,7 @@ class NustarObservation():
         try:
             mean,err=get_parr_array(ser,param,funct)
         except:
-            raise Exception('Error with get par')
+            raise Exception(f'Error with get par {param}')
         phase=np.concatenate((phase,phase+1))
         mean=np.concatenate((mean,mean))
         err=np.hstack((err,err))

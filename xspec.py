@@ -102,7 +102,7 @@ fit 1000
 parallel error 15
 
 
-error 2,3,4,5,6,7,12,13,14,16,17 #,8,9,10
+error 2,3,4,5,6,7,12,13,14,16,17
 
 writetext {folder}.txt 0 50 {folder}
 

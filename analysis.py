@@ -261,87 +261,25 @@ tex_line()
 tex_all()
 
 
-#%% trash
-'''
-#%% latex table constant sigma
-from Miscellaneous import pd_to_latex as latex
-transpose=1
-model='comptt_gabslog_sigma02_'
-la_pd=latex.make_latex_table(ObsParams,
-                 ['MJD_START','ObsID',model+'chi2_red'],
-                 [lambda x:x,lambda x:x,lambda x:x],
-                 [1,1,2],
-                 [model+'eqw_gaussian',model+'flux_gabslog_4_79'],
-                 [lambda x: 1000*x,lambda x: 10**(x)/1e-9],
-                 [0,3],
-                 transpose=transpose)
-
-
-la_pd.to_latex(escape = False, index = transpose)
-la_pd.to_latex(buf=savepath+'table_sigma02.tex',escape = False, index = 1)
-
-
-from Miscellaneous import pd_to_latex as latex
-transpose=1
-model='comptt_gabslog_'
-la_pd=latex.make_latex_table(ObsParams,
-                 ['MJD_START','ObsID',model+'chi2_red'],
-                 [lambda x:x,lambda x:x,lambda x:x],
-                 [1,1,2],
-                 [model+'eqw_gaussian',model+'Sigma3'],
-                 [lambda x: 1000*x,lambda x: x],
-                 [0,3],
-                 transpose=transpose)
-
-
-la_pd.to_latex(escape = False, index = transpose)
-la_pd.to_latex(buf=savepath+'table_sigma_free.tex',escape = False, index = 1)
 
 
 
-#%% latex ultra table
-nof=lambda x:x
-model='comptt_gabslog_' #'comptt_gabslog_sigma02_' or 'comptt_gabslog_'
-# free_columns=['exposure','chi2_red','LineE2','Sigma3','norm4','eqw_gaussian',
-#               'D5','Ecycle6','sigma7','D8','Ecycle9','sigma10',
-#               'T012','kT13','taup14','norm16','factor17'
-#               ]
-# free_columns_functions=[nof,nof,nof,nof,lambda x: 1000*x,lambda x: 1000*x,
-#               nof,nof,nof,nof,nof,nof,
-#               nof,nof,nof,nof,nof]
-# free_columns_formats=[0,3,2,2,2,1,1,
-#               3,2,1,3,2,1,
-#               2,2,1,3,3]
+#%% crosscor 802
 
+data=np.genfromtxt('/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc67/ccf67vs58.dat',
+                   skip_header=3)
+lag,ccf,err=data[:,0],data[:,2],data[:,3]
+plt.errorbar(lag,ccf,err)
 
-free_columns=['exposure','chi2_red']
-free_columns_functions=[nof,nof]
-free_columns_formats=[0,3]
-
-free_columns=[model+item for item in free_columns]
-
-
-err_columns=['LineE2','Sigma3','norm4','eqw_gaussian',
-              'D5','Ecycle6','sigma7','D8','Ecycle9','sigma10',
-              'T012','kT13','taup14','norm16','factor17'
-              ]
-err_functions=[nof,nof,lambda x: 1000*x,lambda x: 1000*x,
-              nof,nof,nof,nof,nof,nof,
-              nof,nof,nof,lambda x: x*1000,nof]
-err_formats=[2,2,2,0,
-             3,3,2,3,3,2,
-             2,2,1,0,3]
-err_columns=[model+item for item in err_columns]
+plt.ylim(-0.02,0.07)
+plt.xlim(-3,3)
 
 
 
-transpose=1
-la_pd=latex.make_latex_table(ObsParams,
-                             free_columns=free_columns, free_columns_functions=free_columns_functions, free_columns_formats=free_columns_formats,
-                             err_columns=err_columns, err_functions=err_functions, err_formats=err_formats,
-                             transpose=transpose)
+N=len(ccf)
 
-tablename=model
-la_pd.to_latex(escape = False, index = transpose)
-la_pd.to_latex(buf=savepath+tablename+'.tex',escape = False, index = transpose)
-'''
+ccf_right=ccf[N//2+1:]
+lag_left=lag[:N//2]
+
+plt.plot(lag_left,ccf_right[::-1],color='r')
+plt.show()

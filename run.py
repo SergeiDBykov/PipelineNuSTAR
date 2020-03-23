@@ -14,7 +14,7 @@ ObsList=['80102002002','80102002004','80102002006','80102002008',
 
 
 #%% select ObsID
-ObsID=ObsList[3]
+ObsID=ObsList[2]
 nu_obs=NustarObservation(ObsID)
 
 STOP
@@ -169,6 +169,22 @@ for mode in ['A']:
 
 nu_obs.orb_correction_lc(folder='lc412',filename='lc412A_sr.lc_bary')
 
+
+#%% cross corr stuff:
+#%% lc in 6-7 keV  range
+
+for mode in ['A']:
+    nu_obs.make_lc(mode=mode,outdir='lc67',stemout='lc67'+mode,
+                   pilow='110',pihigh='135',binsize=0.1)
+
+#%% lc in 6-7 keV  range
+
+for mode in ['A']:
+    nu_obs.make_lc(mode=mode,outdir='lc58',stemout='lc58'+mode,
+                   pilow='85',pihigh='160',binsize=0.1)
+
+
+nu_obs.orb_correction_lc(folder='lc58',filename='lc58A_sr.lc_bary')
 
 
 
