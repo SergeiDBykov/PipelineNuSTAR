@@ -14,7 +14,7 @@ ObsList=['80102002002','80102002004','80102002006','80102002008',
 
 
 #%% select ObsID
-ObsID=ObsList[2]
+ObsID=ObsList[0]
 nu_obs=NustarObservation(ObsID)
 
 STOP
@@ -170,7 +170,47 @@ for mode in ['A']:
 nu_obs.orb_correction_lc(folder='lc412',filename='lc412A_sr.lc_bary')
 
 
-#%% cross corr stuff:
+#%% cross corr eqw  stuff:
+if ObsID=='80102002002':
+    model='comptt_gabslog_sigma_free_temp_fix'
+    nu_obs=NustarObservation(ObsID)
+    nu_obs.scan_spe_results()
+    ser=nu_obs.pandas_series()
+    fig = plt.figure()
+    rows=4
+    cols=3
+    ax_eqw = plt.subplot2grid((rows,cols), (0, 0), rowspan=2, colspan=3)
+    ax_flux=ax_eqw.twinx()
+    ax_ccf = plt.subplot2grid((rows,cols), (2, 0), rowspan=2, colspan=3)
+
+    ax_eqw.set_title(nu_obs.ObsID+f'\n  model: {model}')
+    phase,eqw,_=nu_obs.ph_res_param(model=model,param='eqw_gauss',funct=lambda x: 1000*x,
+                      ax=ax_eqw,color='r',alpha=1)
+    phase,flux712,_=nu_obs.ph_res_param(model=model,param='flux_gabslog_7_12',funct=lambda x: 10**x/1e-8,
+                              ax=ax_flux,color='k',alpha=0.6)
+    ax_flux.set_ylabel('flux 7-12 ',color='k')
+    period=4.3763
+    CCF=cross_correlation.CrossCorrelation(phase*period,eqw,flux712,circular=True)
+    lag,ccf=CCF.calc_ccf()
+    peaks,_,_=CCF.find_max()
+    delay=min(peaks[peaks>0])
+    #self.write_to_obs_info(self.fasebin_info_file,'deltat',delay)
+    #self.write_to_obs_info(self.fasebin_info_file,'deltat_err',period/nph)
+    ax_ccf.axvline(delay,ls=':',color='g',alpha=0.5)
+
+    ax_ccf.plot(lag,ccf,color='b',alpha=0.6)
+    #ax_ccf.set_title(f'Flux lags <--- 0 ---> Eqw lags',fontsize=8)
+    ax_ccf.set_xlim(0,2*period)
+    ax_ccf.set_xlabel('Eqw Delay, sec')
+    ax_ccf.set_ylabel('Pearson r')
+
+
+    plt.show()
+
+
+
+
+
 #%% lc in 6-7 keV  range
 
 for mode in ['A']:

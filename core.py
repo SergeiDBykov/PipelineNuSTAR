@@ -14,7 +14,7 @@ import matplotlib
 import pandas as pd
 from glob import glob
 import os
-from Misc.TimeSeries import cross_corr
+from Misc.TimeSeries import cross_correlation
 from Misc import  doppler_correction
 from scipy.optimize import curve_fit
 import PipelineNuSTAR.xspec  as nu_xspec
