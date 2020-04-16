@@ -54,7 +54,46 @@ ObsParams=pd.read_pickle(results_path+f'{filename}.pkl')
 
 
 
-#%% plot bat and nustar flux
+#%% plot bat maxi and nustar iron flux
+fig, ax_bat = plt.subplots()
+ax=ax_bat.twinx()
+
+time=ObsParams.MJD_START
+fl,fl_err=vals_and_errors(ObsParams,'comptt_gabslog_sigma03_flux_gaussian_4_12',
+                          funct=lambda x: 10**x/1e-10)
+
+ax.errorbar(time,fl,fl_err,fmt='.',color='g',marker='s',ms=5)
+
+ax.set_ylabel('NuSTAR Iron line Flux \n $10^{-10}$ cgs',color='g')
+ax.set_xlabel('Time, MJD')
+
+
+maxilc=np.genfromtxt('/Users/s.bykov/work/xray_pulsars/nustar/data/J0334+531_00055054g_lc_1day_all.dat')
+maxidays=maxilc[:,0]
+maxirate=maxilc[:,5]
+maxierror=maxilc[:,6]
+
+
+
+time=ObsParams.MJD_START
+ax_bat.errorbar(maxidays,maxirate,maxierror,fmt='.',color='b',alpha=0.7)
+ax_bat.set_xlim(57180,57320)
+ax_bat.set_ylim(-0.001,1.5)
+
+ax_bat.set_ylabel('MAXI rate (4-10 keV) \n photons/s/cm^2',color='b')
+ax_bat.set_xlabel('Time, MJD')
+
+
+ax.legend()
+fig.tight_layout()
+sns.despine(fig,top=1,right=0)
+plt.savefig(savepath+f'bat_lc.pdf',dpi=500)
+
+plt.show()
+
+
+
+#%% plot bat maxi and nustar flux
 fig, ax_bat = plt.subplots()
 ax=ax_bat.twinx()
 
@@ -64,7 +103,7 @@ fl,fl_err=vals_and_errors(ObsParams,'comptt_gabslog_sigma03_flux_gabslog_12_79',
 
 ax.errorbar(time,fl,fl_err,fmt='.',color='g',marker='s',ms=5)
 
-ax.set_ylabel('NuSTAR Flux (12-79 keV), \n 10^(-9) cgs',color='g')
+ax.set_ylabel('NuSTAR Flux (12-79 keV), \n $10^{-9}$ cgs',color='g')
 ax.set_xlabel('Time, MJD')
 
 batlc=np.genfromtxt('/Users/s.bykov/work/xray_pulsars/nustar/data/V0332p53.lc.txt')
@@ -72,20 +111,29 @@ batdays=batlc[:,0]
 batrate=batlc[:,1]
 baterror=batlc[:,2]
 
+maxilc=np.genfromtxt('/Users/s.bykov/work/xray_pulsars/nustar/data/J0334+531_00055054g_lc_1day_all.dat')
+maxidays=maxilc[:,0]
+maxirate=maxilc[:,5]
+maxierror=maxilc[:,6]
+
 
 
 time=ObsParams.MJD_START
-ax_bat.errorbar(batdays,batrate,baterror,fmt='.',color='b',alpha=0.7)
+#ax_bat.errorbar(batdays,batrate,baterror,fmt='.',color='b',alpha=0.7)
+ax_bat.errorbar(maxidays,maxirate,maxierror,fmt='.',color='b',alpha=0.7)
 #ax.set_yscale('log')
 ax_bat.set_xlim(57180,57320)
-ax_bat.set_ylim(-0.001,0.25)
+ax_bat.set_ylim(-0.001,1.5)
 
-ax_bat.set_ylabel('BAT rate (15-50 keV) \n counts/s/cm^2',color='b')
+#ax_bat.set_ylabel('BAT rate (15-50 keV) \n counts/s/cm^2',color='b')
+ax_bat.set_ylabel('MAXI rate (4-10 keV) \n photons/s/cm^2',color='b')
+ax_bat.set_xlabel('Time, MJD')
+
 
 ax.legend()
 fig.tight_layout()
 sns.despine(fig,top=1,right=0)
-plt.savefig(savepath+f'bat_lc.png',dpi=500)
+plt.savefig(savepath+f'bat_lc.pdf',dpi=500)
 
 plt.show()
 
@@ -102,17 +150,14 @@ ax.errorbar(time,eqw,eqw_err,fmt='.',color='c',marker='s',ms=4,label='Sigma=0.3 
 
 
 
-eqw,eqw_err=vals_and_errors(ObsParams,'comptt_gabslog_eqw_gaussian',funct=lambda x: 1e3*x)
+#eqw,eqw_err=vals_and_errors(ObsParams,'comptt_gabslog_eqw_gaussian',funct=lambda x: 1e3*x)
 
-ax.errorbar(time,eqw,eqw_err,fmt='.',color='y',marker='s',ms=4,label='Sigma free',alpha=0.8)
+#ax.errorbar(time,eqw,eqw_err,fmt='.',color='y',marker='s',ms=4,label='Sigma free',alpha=0.8)
 
-ax.legend(loc='best')
+#ax.legend(loc='best')
 ax.set_xlim(57200,57320)
 ax.set_ylabel('Iron line equivalent width \n eV',color='k')
 ax.set_xlabel('Time, MJD')
-
-
-
 
 
 from Misc.doppler_correction import orb_params_v0332
@@ -127,7 +172,7 @@ for i in range(1,15):
 
 fig.tight_layout()
 sns.despine(fig,top=1,right=0)
-plt.savefig(savepath+f'eqw.png',dpi=500)
+plt.savefig(savepath+f'eqw.pdf',dpi=500)
 
 plt.show()
 
@@ -251,9 +296,9 @@ tex_all()
 
 #%% latex tables, sigma fix
 
-#indexNames = ObsParams[ ObsParams['ObsID'] > 80102002007 ].index
-#df=ObsParams.drop(indexNames , inplace=False)
-df=ObsParams
+indexNames = pd.core.indexes.base.Index(['obs90202031002', 'obs90202031004'])
+df=ObsParams.drop(indexNames , inplace=False)
+
 model='comptt_gabslog_sigma03_'
 ParList=[col for col in df.columns if 'bin' not in col and model in col and '_hi' not in col and '_lo' not in col  ]
 name='fix_sigma.tex'

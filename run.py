@@ -8,13 +8,16 @@ Created on Thu Feb 20 11:24:00 2020
 
 #%% imports and definitions
 from PipelineNuSTAR.core import *
+import seaborn as sns
+sns.set(style='ticks', palette='deep',context='notebook')
+
 
 ObsList=['80102002002','80102002004','80102002006','80102002008',
          '80102002010','90202031002','90202031004'] #all obsevations
 
 
 #%% select ObsID
-ObsID=ObsList[0]
+ObsID=ObsList[2]
 nu_obs=NustarObservation(ObsID)
 
 STOP
@@ -30,8 +33,8 @@ for mode in ['A','B']:
 
 nu_obs.fit_spe(spe_folder='spe_and_lc',result_name='comptt_gabslog',model='comptt_gabslog',lowlim='4',uplim='79')
 
-nu_obs.fit_spe(spe_folder='spe_and_lc',result_name='comptt_gabslog_sigma02',model='comptt_gabslog',lowlim='4',uplim='79',
-               xspec_comms=['newpar 3 0.2 -1'])
+# nu_obs.fit_spe(spe_folder='spe_and_lc',result_name='comptt_gabslog_sigma02',model='comptt_gabslog',lowlim='4',uplim='79',
+#                xspec_comms=['newpar 3 0.2 -1'])
 
 nu_obs.fit_spe(spe_folder='spe_and_lc',result_name='comptt_gabslog_sigma03',model='comptt_gabslog',lowlim='4',uplim='79',
                xspec_comms=['newpar 3 0.3 -1'])
@@ -162,6 +165,42 @@ for file in [nu_obs.products_path+'/lc412/efold.dat',nu_obs.products_path+'/lc41
 # # =============================================================================
 plt.show()
 
+#%% lc for iron line timeseries
+#eergy - channel
+#4 kev - 60
+#6 kev - 110
+#7 kev - 135
+#9 kev - 185
+#12 keV - 260
+#4-6 keV
+for mode in ['A','B']:
+    nu_obs.make_lc(mode=mode,outdir='lc46',stemout='lc46'+mode,pilow='60',pihigh='110',binsize=10)
+#lcmath
+#6-7 keV
+for mode in ['A','B']:
+    nu_obs.make_lc(mode=mode,outdir='lc67',stemout='lc67'+mode,pilow='110',pihigh='135',binsize=10)
+
+#7-9 keV
+for mode in ['A','B']:
+    nu_obs.make_lc(mode=mode,outdir='lc79',stemout='lc79'+mode,pilow='135',pihigh='185',binsize=10)
+
+#7-12
+#7-9 keV
+for mode in ['A','B']:
+    nu_obs.make_lc(mode=mode,outdir='lc712',stemout='lc712'+mode,pilow='135',pihigh='260',binsize=10)
+
+
+#orb corrs
+for mode in ['A','B']:
+    nu_obs.orb_correction_lc(folder='lc46',filename=f'lc46AB_sr.lc_bary')
+for mode in ['A','B']:
+    nu_obs.orb_correction_lc(folder='lc67',filename=f'lc67{mode}_sr.lc_bary')
+for mode in ['A','B']:
+    nu_obs.orb_correction_lc(folder='lc79',filename=f'lc79{mode}_sr.lc_bary')
+for mode in ['A','B']:
+    nu_obs.orb_correction_lc(folder='lc712',filename=f'lc712{mode}_sr.lc_bary')
+
+
 #%% lc in 4-12 keV  range
 
 for mode in ['A']:
@@ -170,33 +209,69 @@ for mode in ['A']:
 nu_obs.orb_correction_lc(folder='lc412',filename='lc412A_sr.lc_bary')
 
 
+
 #%% cross corr eqw  stuff:
-if ObsID=='80102002002':
-    model='comptt_gabslog_sigma_free_temp_fix'
+import seaborn as sns
+sns.set(style='ticks', palette='deep',context='notebook')
+
+if ObsID in ['80102002002','80102002004','80102002006']:
+    #model='comptt_gabslog_sigma_free_temp_fix'
+    #fluxpar='flux_gabslog_7_12'
+
+    matplotlib.rcParams['figure.figsize'] = 6.6, 6.6/2
+    matplotlib.rcParams['figure.subplot.left']=0.15
+    matplotlib.rcParams['figure.subplot.bottom']=0.15
+    matplotlib.rcParams['figure.subplot.right']=0.85
+    matplotlib.rcParams['figure.subplot.top']=0.9
+    plt.subplots_adjust(wspace=2)
+    plt.subplots_adjust(hspace=1)
+
+    model='cutoffpl_sigma_03'
+    fluxpar='flux_cutoffpl_4_12'
     nu_obs=NustarObservation(ObsID)
     nu_obs.scan_spe_results()
     ser=nu_obs.pandas_series()
     fig = plt.figure()
-    rows=4
+    rows=7
     cols=3
     ax_eqw = plt.subplot2grid((rows,cols), (0, 0), rowspan=2, colspan=3)
     ax_flux=ax_eqw.twinx()
-    ax_ccf = plt.subplot2grid((rows,cols), (2, 0), rowspan=2, colspan=3)
 
-    ax_eqw.set_title(nu_obs.ObsID+f'\n  model: {model}')
+    ax_fe_norm = plt.subplot2grid((rows,cols), (2, 0), rowspan=2, colspan=3)
+    ax_flux2=ax_fe_norm.twinx()
+
+
+    ax_ccf = plt.subplot2grid((rows,cols), (5, 0), rowspan=2, colspan=3)
+
+
+    #ax_eqw.set_title(nu_obs.ObsID+f'\n  model: {model}')
     phase,eqw,_=nu_obs.ph_res_param(model=model,param='eqw_gauss',funct=lambda x: 1000*x,
-                      ax=ax_eqw,color='r',alpha=1)
-    phase,flux712,_=nu_obs.ph_res_param(model=model,param='flux_gabslog_7_12',funct=lambda x: 10**x/1e-8,
-                              ax=ax_flux,color='k',alpha=0.6)
-    ax_flux.set_ylabel('flux 7-12 ',color='k')
-    period=4.3763
+                      ax=ax_eqw,color='c',alpha=0.6)
+    phase,norm,_=nu_obs.ph_res_param(model=model,param='norm4',funct=lambda x: x,
+                      ax=ax_fe_norm,color='r',alpha=0.6)
+
+    phase,flux712,_=nu_obs.ph_res_param(model=model,param=fluxpar,funct=lambda x: 10**x/1e-8,
+                              ax=ax_flux,color='k',ls=':',alpha=0.6)
+    phase,flux712,_=nu_obs.ph_res_param(model=model,param=fluxpar,funct=lambda x: 10**x/1e-8,
+                              ax=ax_flux2,color='k',ls=':',alpha=0.6)
+
+    ax_eqw.set_ylabel('Iron line \n Eq. width, eV',color='c',fontsize=8)
+    ax_fe_norm.set_ylabel('Iron line \n Norm. ',color='r',fontsize=8)
+
+    ax_flux.set_ylabel('Flux (7-12 keV) \n $10^{-8}$ cgs',fontsize=6)
+    ax_flux2.set_ylabel('Flux (7-12 keV) \n $10^{-8}$ cgs',fontsize=6)
+
+    ax_fe_norm.set_xlabel('Phase',fontsize=8)
+    ax_eqw.set_title(nu_obs.ObsID)
+
+    period=ser['period_spe_and_lcA_sr.bary_lc_orb_corr']
     CCF=cross_correlation.CrossCorrelation(phase*period,eqw,flux712,circular=True)
     lag,ccf=CCF.calc_ccf()
     peaks,_,_=CCF.find_max()
     delay=min(peaks[peaks>0])
     #self.write_to_obs_info(self.fasebin_info_file,'deltat',delay)
     #self.write_to_obs_info(self.fasebin_info_file,'deltat_err',period/nph)
-    ax_ccf.axvline(delay,ls=':',color='g',alpha=0.5)
+    #ax_ccf.axvline(delay,ls=':',color='g',alpha=0.5)
 
     ax_ccf.plot(lag,ccf,color='b',alpha=0.6)
     #ax_ccf.set_title(f'Flux lags <--- 0 ---> Eqw lags',fontsize=8)
@@ -204,8 +279,12 @@ if ObsID=='80102002002':
     ax_ccf.set_xlabel('Eqw Delay, sec')
     ax_ccf.set_ylabel('Pearson r')
 
-
     plt.show()
+
+    fig.tight_layout()
+    sns.despine(fig,top=1,right=0)
+    savepath=f'/Users/s.bykov/work/xray_pulsars/nustar/plots_results/'
+    plt.savefig(savepath+f'ph_res_{nu_obs.ObsID}_{model}_report.pdf',dpi=500)
 
 
 
