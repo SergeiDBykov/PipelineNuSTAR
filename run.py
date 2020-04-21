@@ -17,7 +17,7 @@ ObsList=['80102002002','80102002004','80102002006','80102002008',
 
 
 #%% select ObsID
-ObsID=ObsList[2]
+ObsID=ObsList[0]
 nu_obs=NustarObservation(ObsID)
 
 STOP
@@ -172,33 +172,31 @@ plt.show()
 #7 kev - 135
 #9 kev - 185
 #12 keV - 260
+
 #4-6 keV
+binsize=0.1
 for mode in ['A','B']:
-    nu_obs.make_lc(mode=mode,outdir='lc46',stemout='lc46'+mode,pilow='60',pihigh='110',binsize=10)
+    nu_obs.make_lc(mode=mode,outdir='lc46_'+str(binsize),stemout='lc46'+mode,pilow='60',pihigh='110',binsize=binsize)
 #lcmath
 #6-7 keV
 for mode in ['A','B']:
-    nu_obs.make_lc(mode=mode,outdir='lc67',stemout='lc67'+mode,pilow='110',pihigh='135',binsize=10)
+    nu_obs.make_lc(mode=mode,outdir='lc67_'+str(binsize),stemout='lc67'+mode,pilow='110',pihigh='135',binsize=binsize)
 
 #7-9 keV
 for mode in ['A','B']:
-    nu_obs.make_lc(mode=mode,outdir='lc79',stemout='lc79'+mode,pilow='135',pihigh='185',binsize=10)
+    nu_obs.make_lc(mode=mode,outdir='lc79_'+str(binsize),stemout='lc79'+mode,pilow='135',pihigh='185',binsize=binsize)
 
 #7-12
-#7-9 keV
 for mode in ['A','B']:
-    nu_obs.make_lc(mode=mode,outdir='lc712',stemout='lc712'+mode,pilow='135',pihigh='260',binsize=10)
+    nu_obs.make_lc(mode=mode,outdir='lc712_'+str(binsize),stemout='lc712'+mode,pilow='135',pihigh='260',binsize=binsize)
 
 
 #orb corrs
-for mode in ['A','B']:
-    nu_obs.orb_correction_lc(folder='lc46',filename=f'lc46AB_sr.lc_bary')
-for mode in ['A','B']:
-    nu_obs.orb_correction_lc(folder='lc67',filename=f'lc67{mode}_sr.lc_bary')
-for mode in ['A','B']:
-    nu_obs.orb_correction_lc(folder='lc79',filename=f'lc79{mode}_sr.lc_bary')
-for mode in ['A','B']:
-    nu_obs.orb_correction_lc(folder='lc712',filename=f'lc712{mode}_sr.lc_bary')
+
+nu_obs.orb_correction_lc(folder='lc46_'+str(binsize),filename=f'lc46AB_sr.lc_bary')
+nu_obs.orb_correction_lc(folder='lc67_'+str(binsize),filename=f'lc67AB_sr.lc_bary')
+nu_obs.orb_correction_lc(folder='lc79_'+str(binsize),filename=f'lc79AB_sr.lc_bary')
+nu_obs.orb_correction_lc(folder='lc712_'+str(binsize),filename=f'lc712AB_sr.lc_bary')
 
 
 #%% lc in 4-12 keV  range

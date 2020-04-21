@@ -6,5 +6,5 @@ save_non_project_files = False
 
 [main]
 version = 0.2.0
-recent_files = ['core.py', 'analysis.py', 'run.py', '../PipelineXTE/pipeline_core.py']
+recent_files = ['iron_line_flux_estimation.py', 'ccf_simulation_revnivtsev.py', '../Misc/TimeSeries/cross_correlation.py']
 
