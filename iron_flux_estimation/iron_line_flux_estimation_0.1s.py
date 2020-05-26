@@ -13,11 +13,10 @@ sns.set(style='ticks', palette='deep',context='notebook')
 
 path_to_lc='/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products'
 
-
 class TimeSeries():
 
     def __init__(self,lcname):
-        self.fits=fits.open(path_to_lc+f'/{lcname}/{lcname}AB_sr.lc_bary')
+        self.fits=fits.open(path_to_lc+f'/{lcname}_0.1/{lcname}AB_sr.lc_bary_orb_corr')
         self.time=self.fits[1].data['time']
         self.rate=self.fits[1].data['rate']
         self.error=self.fits[1].data['error']
@@ -112,7 +111,7 @@ for axx in ax:
     axx.set_xlabel('energy')
     #plt.legend()
     axx.set_xlim(4,9)
-    axx.set_ylim(30,80)
+    axx.set_ylim(30,120)
 
 
 
@@ -148,7 +147,7 @@ def find_fe_flux(lc46,lc67,lc79,frac=1):
     diff_err=np.reshape(diff_err,N)
     return diff,diff_err
 
-frac=1
+frac=0.5
 fe_flux,fe_flux_err=find_fe_flux(lc46, lc67, lc79,frac=frac)
 
 # Flux_tot=lc67.rate
@@ -195,11 +194,22 @@ print(f'Mean Error: {np.mean(fe_flux_err)}')
 print(f'Mean significance (mean flux/err): {np.mean(fe_flux/fe_flux_err)}')
 
 
+# 0.1 sec results
+# 50.0% OF THE LINEAR APPROX IS USED AS CONTINUUM
+# Mean Flux: 38.62371713826194
+# Std Flux: 32.60471722829069
+# Weighted mean flux: 23.065260336617573
+# Weighted std flux: 31.096813820508903
+# Weighted mean/weighted std : 0.7417242316126169
+# Mean Error: inf
+# Mean significance (mean flux/err): 0.6912890678317485
+
+
 #%% iron line flux save in fits
 
-os.chdir(path_to_lc+'/lc712')
-os.system(f'cp lc712AB_sr.lc_bary fe_line_{frac}.lc_bary')
-with fits.open(f'/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712/fe_line_{frac}.lc_bary', mode='update') as hdul:
+os.chdir(path_to_lc+'/lc712_0.1')
+os.system(f'cp lc712AB_sr.lc_bary_orb_corr fe_line_{frac}.lc_bary_orb_corr')
+with fits.open(f'/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712_0.1/fe_line_{frac}.lc_bary_orb_corr', mode='update') as hdul:
     hdul[1].data['rate']=fe_flux
     hdul[1].data['error']=fe_flux_err
     hdul.flush()  # changes are written back to original.fits
@@ -217,7 +227,7 @@ plt.subplots_adjust(hspace=1)
 fig,ax=plt.subplots()
 
 
-ccf=np.genfromtxt(f'/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712/ccf_{frac}.qdp',skip_header=3)
+ccf=np.genfromtxt(f'/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712_1/ccf_{frac}.qdp',skip_header=3)
 N=int(ccf[:,0].shape[0]/2)
 ax.errorbar(ccf[:,0],ccf[:,2],ccf[:,3],drawstyle='steps-mid')
 
@@ -232,7 +242,7 @@ ax.set_ylabel('CCF')
 fig.tight_layout()
 sns.despine(fig,top=1,right=0)
 plt.show()
-plt.savefig(f'ccf_{frac}.pdf')
+plt.savefig(f'ccf_{frac}.png')
 
 
 
@@ -262,162 +272,3 @@ Out[11]: 9.462371613657949e-11
 Out[12]: 0.06105543691868596
 
 '''
-
-
-#%% simulation
-STOP
-#%% simulation of sine waves
-T=4000
-binsize=10
-N=int(T/binsize)
-time=np.linspace(0,T,N) #typical nustar window duration of 4000 sec with 10 sec binsize
-
-###y1 - 7-12 keV
-P=150
-y1_mean=250
-y1_error=20
-y1_ampt=50
-
-y1=y1_mean+y1_ampt*np.sin(time*2*np.pi/P)
-y1+=np.random.normal(time-time,y1_error)
-y1_err=y1_error
-
-
-###y2 - iron line
-deltaT=10
-y2_mean=10
-y2_error=5
-y2_ampt=3
-
-y2=y2_mean+y2_ampt*np.sin((time-deltaT)*2*np.pi/P)
-y2+=np.random.normal(time-time,y2_error)
-y2_err=y2_error
-
-#%% plots
-fig,axs=plt.subplots(3,)#sharex='all')
-axs[0].errorbar(time,y1,y1_err)
-axs[1].errorbar(time,y2,y2_err)
-ax=axs[2]
-#plt.show()
-
-
-
-#%%crosscorr
-from Misc.TimeSeries.cross_correlation import cross_correlation
-
-
-lag,corr=cross_correlation(time, y1, y2,circular=0)
-N=int(lag.shape[0]/2)
-
-
-#fig,ax=plt.subplots()
-
-ax.plot(lag,corr,label='CCF \n y1=7-12 keV \n y2=Iron flux')
-
-ax.plot(-lag[N:],corr[N:],alpha=0.5,color='r')
-
-
-
-ax.set_xlim(-150,150)
-ax.set_xlabel('y2 lags <--0--> y1 lags')
-ax.set_ylabel('CCF')
-ax.legend()
-
-axs[0].set_title(f'''
-             y2 deltaT={deltaT}
-             y2_mean={y2_mean}; y2_error={y2_error};y2_ampitude={y2_ampt}
-             ''',fontsize=12)
-plt.show()
-
-savepath='/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712/simulations/'
-plt.savefig(savepath+f'ccf_{deltaT}.png')
-
-
-
-
-
-#%% simulation interpolate
-
-
-lcdata=np.genfromtxt('/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712/data_lc712_segm4.qdp',skip_header=0)
-time=lcdata[:,0]
-time-=time[0]
-rate=lcdata[:,2]
-error=lcdata[:,3]
-from scipy import interpolate
-from scipy.signal import savgol_filter
-
-
-itp = interpolate.interp1d(time,rate, kind='linear')
-window_size, poly_order =21, 3
-yy_sg = savgol_filter(itp(time), window_size, poly_order)
-
-
-#f = interpolate.interp1d(time, rate, kind='cubic')
-#f=interpolate.CubicSpline(time,rate)
-plt.errorbar(time,rate,error,alpha=0.6)
-#timeaxis=np.linspace(time[0],time[-1],2000)
-plt.plot(time, yy_sg, 'r-', label= "Smoothed curve")
-#plt.plot(timeaxis,f(timeaxis),'r-',lw=3)
-
-f=interpolate.interp1d(time, yy_sg,fill_value='extrapolate')
-
-plt.show()
-
-#%% create data
-
-y1=rate
-y1_err=error
-
-
-deltaT=20
-y2_mean=10
-y2_error=5
-y2_ampl=10
-
-y2=f((time-deltaT))/mean(y1)*y2_mean*y2_ampl
-y2+=np.random.normal(time-time,y2_error)
-y2_err=y2_error
-
-
-#%% plots
-fig,axs=plt.subplots(3,)#sharex='all')
-axs[0].errorbar(time,y1,y1_err)
-axs[0].plot(time,f((time)),'r:',zorder=10)
-
-axs[1].errorbar(time,y2,y2_err)
-axs[1].plot(time,f((time-deltaT))/mean(y1)*y2_mean*y2_ampl,'r:',zorder=10)
-ax=axs[2]
-#plt.show()
-
-
-
-#%%crosscorr
-from Misc.TimeSeries.cross_correlation import cross_correlation
-
-
-lag,corr=cross_correlation(time, y1, y2,circular=0)
-N=int(lag.shape[0]/2)
-
-
-#fig,ax=plt.subplots()
-
-ax.plot(lag,corr,label='CCF \n y1=7-12 keV \n y2=Iron flux')
-
-ax.plot(-lag[N:],corr[N:],alpha=0.5,color='r')
-
-
-
-ax.set_xlim(-150,150)
-ax.set_xlabel('y2 lags <--0--> y1 lags')
-ax.set_ylabel('CCF')
-ax.legend()
-
-axs[0].set_title(f'''
-             y2 deltaT={deltaT}
-             y2_mean={y2_mean}; y2_error={y2_error};y2_ampitude={y2_ampl}
-             ''',fontsize=12)
-plt.show()
-
-savepath='/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712/simulations/'
-plt.savefig(savepath+f'ccf_{deltaT}s_{y2_ampl}ampl_real_lc.png')

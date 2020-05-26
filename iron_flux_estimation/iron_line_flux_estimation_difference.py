@@ -11,13 +11,12 @@ from PipelineNuSTAR.core import *
 import seaborn as sns
 sns.set(style='ticks', palette='deep',context='notebook')
 
-path_to_lc='/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products'
-
+path_to_lc='/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002004/products'
 
 class TimeSeries():
 
     def __init__(self,lcname):
-        self.fits=fits.open(path_to_lc+f'/{lcname}/{lcname}AB_sr.lc_bary')
+        self.fits=fits.open(path_to_lc+f'/{lcname}_1/{lcname}AB_sr.lc_bary')
         self.time=self.fits[1].data['time']
         self.rate=self.fits[1].data['rate']
         self.error=self.fits[1].data['error']
@@ -30,114 +29,39 @@ class TimeSeries():
 stop
 
 #%%read lcurves
-en=np.array([5,6.5,8])
-enerr=np.array([1,0.5,1])
-dE=np.array([2,1,2])
+en=np.array([6.5,8])
+enerr=np.array([0.5,1])
+dE=np.array([1,2])
 
 
-lc46=TimeSeries('lc46')
 lc67=TimeSeries('lc67')
 lc79=TimeSeries('lc79')
 lc712=TimeSeries('lc712')
 
 
-for k,lc in enumerate([lc46,lc67,lc79]):
+for k,lc in enumerate([lc67,lc79]):
     lc=lc.divide(dE[k])
 
-rate=np.array([lc.rate.mean() for lc in [lc46,lc67,lc79]])
-rate_error=np.array([lc.rate.std() for lc in [lc46,lc67,lc79]])
+rate=np.array([lc.rate.mean() for lc in [lc67,lc79]])
+rate_error=np.array([lc.rate.std() for lc in [lc67,lc79]])
 
-#%% plot spectra etc
-plt.figure()
-
-spe=np.genfromtxt('/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc46/spe_data.qdp',skip_header=3)
-
-a,b=np.polyfit(en[[0,2]],rate[[0,2]],1)
-#enaxis=np.linspace(4,9,100)
-enaxis=np.linspace(4,9,100)
-plt.plot(enaxis,a*enaxis+b,label='linear best model ignoring 6-7 kev')
-
-plt.errorbar(en,rate,rate_error,dE/2,label='spectra_From_lc')
-plt.plot(spe[:,0],spe[:,2]*63/46,'k.',label='data from xspec + 36%')
-#plt.xscale('log')
-plt.show()
-plt.ylabel(' counts/s / keV')
-plt.xlabel('energy')
-plt.legend()
-plt.xlim(4,9)
-plt.ylim(30,80)
-
-def best_line(x,N):
-    return x*a+N
-
-
-
-
-#%% plot a few points
-N=len(lc46.time)
-
-
-fig,ax=plt.subplots(3)
-from random import randint
-randi=[randint(0, N) for p in range(0, 3)]
-for k,i in enumerate(randi):
-    rate=np.array([lc46.rate[i],lc67.rate[i],lc79.rate[i]])
-    rate_error=np.array([lc46.error[i],lc67.error[i],lc79.error[i]])
-
-    N_opt,N_opt_err=curve_fit(best_line,en[[0,2]],rate[[0,2]],
-                              p0=b,sigma=rate_error[[0,2]],absolute_sigma=True)
-    print(N_opt_err)
-    N_opt_err=np.sqrt(N_opt_err[0])
-
-
-    myline=lambda x: a*x+N_opt
-    ax[k].plot(enaxis,myline(enaxis),'k:',alpha=0.3)
-
-    ax[k].errorbar(en,rate,rate_error,dE/2,label='spectra_From_lc')
-
-
-    diff=rate[1]-myline(en[1])
-    diff_err=np.sqrt(rate_error[1]**2+N_opt_err**2)
-    #diff_err=np.sqrt(rate_error[1]**2)
-
-    ax[k].vlines(en[1],rate[1],rate[1]-diff,color='r',alpha=0.7)
-
-    print(i,diff,diff_err)
-
-
-
-plt.show()
-for axx in ax:
-    axx.set_ylabel(' counts/s / keV')
-    axx.set_xlabel('energy')
-    #plt.legend()
-    axx.set_xlim(4,9)
-    axx.set_ylim(30,80)
 
 
 
 #%% find fe flux in time
 
-def find_fe_flux(lc46,lc67,lc79,frac=1):
-    N=len(lc46.rate)
+def find_fe_flux(lc67,lc79,frac=1):
+    N=len(lc67.rate)
 
     diff=[]
     diff_err=[]
     print(f'{frac*100}% OF THE LINEAR APPROX IS USED AS CONTINUUM')
     for i in range(N):
-        f=np.array([lc46.rate[i],lc67.rate[i],lc79.rate[i]])
-        ferr=np.array([lc46.error[i],lc67.error[i],lc79.error[i]])
+        f=np.array([lc67.rate[i],lc79.rate[i]])
+        ferr=np.array([lc67.error[i],lc79.error[i]])
 
-
-        N_opt,N_opt_err=curve_fit(best_line,en[[0,2]],f[[0,2]],
-                              p0=b,sigma=ferr[[0,2]],absolute_sigma=True)
-        N_opt_err=np.sqrt(N_opt_err[0])
-
-        myline=lambda x: a*x+N_opt
-
-        fe_flux=f[1]-myline(en[1])*frac
-        fe_flux_err=np.sqrt(ferr[1]**2+N_opt_err**2)
-        #fe_flux_err=np.sqrt(ferr[1]**2)
+        fe_flux=f[0]-f[1]*frac
+        fe_flux_err=np.sqrt(ferr[1]**2+ferr[0]**2)
 
         diff.append(fe_flux)
         diff_err.append(fe_flux_err)
@@ -149,7 +73,7 @@ def find_fe_flux(lc46,lc67,lc79,frac=1):
     return diff,diff_err
 
 frac=1
-fe_flux,fe_flux_err=find_fe_flux(lc46, lc67, lc79,frac=frac)
+fe_flux,fe_flux_err=find_fe_flux(lc67, lc79,frac=frac)
 
 # Flux_tot=lc67.rate
 # Flux_fe=fe_flux
@@ -160,7 +84,7 @@ fe_flux,fe_flux_err=find_fe_flux(lc46, lc67, lc79,frac=frac)
 
 #%% plot iron intensity
 figure()
-plt.errorbar(lc46.time,fe_flux,fe_flux_err)
+plt.errorbar(lc67.time,fe_flux,fe_flux_err)
 plt.xlabel('Time, s')
 plt.ylabel('Iron line flux')
 plt.show()
@@ -197,9 +121,9 @@ print(f'Mean significance (mean flux/err): {np.mean(fe_flux/fe_flux_err)}')
 
 #%% iron line flux save in fits
 
-os.chdir(path_to_lc+'/lc712')
+os.chdir(path_to_lc+'/lc712_1')
 os.system(f'cp lc712AB_sr.lc_bary fe_line_{frac}.lc_bary')
-with fits.open(f'/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712/fe_line_{frac}.lc_bary', mode='update') as hdul:
+with fits.open(f'/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002004/products/lc712_1/fe_line_{frac}.lc_bary', mode='update') as hdul:
     hdul[1].data['rate']=fe_flux
     hdul[1].data['error']=fe_flux_err
     hdul.flush()  # changes are written back to original.fits
@@ -217,7 +141,7 @@ plt.subplots_adjust(hspace=1)
 fig,ax=plt.subplots()
 
 
-ccf=np.genfromtxt(f'/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712/ccf_{frac}.qdp',skip_header=3)
+ccf=np.genfromtxt(f'/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002004/products/lc712_1/ccf{frac}.qdp',skip_header=3)
 N=int(ccf[:,0].shape[0]/2)
 ax.errorbar(ccf[:,0],ccf[:,2],ccf[:,3],drawstyle='steps-mid')
 
@@ -232,7 +156,7 @@ ax.set_ylabel('CCF')
 fig.tight_layout()
 sns.despine(fig,top=1,right=0)
 plt.show()
-plt.savefig(f'ccf_{frac}.pdf')
+#plt.savefig(f'ccf_{frac}.png')
 
 
 

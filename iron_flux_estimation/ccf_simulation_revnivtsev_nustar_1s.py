@@ -19,26 +19,34 @@ from stingray import Lightcurve, Crossspectrum, Powerspectrum
 from stingray.simulator import simulator
 from Misc.TimeSeries import cross_correlation
 
-os.chdir('/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712')
+os.chdir('/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712_1')
 
 
 
-def simulate_lc712_from_powerspectrum(mean=253.4,rms=sqrt(402.5)/253,dt=10,
+def simulate_lc712_from_powerspectrum(mean=262.5,rms=sqrt(1111)/262.5,dt=1,
                                    plot_results=0):
     N=int(10000/dt)
     sim = simulator.Simulator(N=N, mean=mean ,rms=rms, dt=dt)
 
     w = np.fft.rfftfreq(sim.N, d=sim.dt)[1:]
     #from xspec
-    xspec_pars=[
- 0.00912596,
- 0.00300072,
-  0.0785102,
+    xspec_pars=[2.66131e-12,
+ 0.00475604,
+   0.137921,
+ 0.00957886,
+ 0.00485861,
+  0.0887958,
+  0.0575785,
+  0.0198208,
+   0.122588,
+   0.228211,
+  0.0506762,
+   0.162946,
+       -2.5,
+   0.849147,
           0,
- 0.00215227,
-   0.240521,
-          0,
-    5.85424,]
+   0.393661,
+    1.09283]
 
     #https://heasarc.gsfc.nasa.gov/xanadu/xspec/manual/node191.html
     def lorentzian( x, x0, gam, a ):
@@ -48,9 +56,10 @@ def simulate_lc712_from_powerspectrum(mean=253.4,rms=sqrt(402.5)/253,dt=10,
         return N*1/(sigma*np.sqrt(2*np.pi))*np.exp(-(x-x0)**2/(2*sigma**2))
     def po(x,gamma,N):
         return N*x**(-gamma)
-#model  const+lore+gauss
 
-    spectrum = lorentzian(w, *xspec_pars[0:3])+lorentzian(w, *xspec_pars[3:6])+ po(w,*xspec_pars[6:8])
+#model  lorentz + lorentz +  lorentz  +   lorentz   +    powerlaw    +     lorentz
+
+    spectrum = lorentzian(w, *xspec_pars[0:3])+lorentzian(w, *xspec_pars[3:6])+lorentzian(w,*xspec_pars[6:9])+lorentzian(w,*xspec_pars[9:12])+po(w,*xspec_pars[12:14])+lorentzian(w,*xspec_pars[14:17])
 
 
     lc = sim.simulate(spectrum)
@@ -106,11 +115,11 @@ simulate_lc712_from_powerspectrum(plot_results=1)
 
 #%% simulate
 ccfs=[]
-for i in range(100):
+for i in range(25):
     print(i)
     lc712=simulate_lc712_from_powerspectrum()
-    A=0.7
-    deltaT=30
+    A=0.75
+    deltaT=2
     lc67=iron_band_model_lc(lc712, A, deltaT)
 
     #lc712=lc712.rebin(1)
@@ -125,23 +134,24 @@ ccfs=np.asarray(ccfs)
 fig,ax_ccf=plt.subplots(figsize=(16,6))
 
 ax_ccf.errorbar(ccf.lag,ccfs.mean(axis=0),ccfs.std(axis=0),label=f'simulations dT={deltaT}s; A={A}',marker='s')
-ax_ccf.set_xlim(-75,75)
-ax_ccf.set_ylim(-0.2,1.1)
+#ax_ccf.set_xlim(-75,75)
+#ax_ccf.set_ylim(-0.2,1.1)
 
 def plot_data_ccf(name,ax_ccf):
-    ccf_data=np.genfromtxt(f'/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712/{name}.qdp',skip_header=3)
+    ccf_data=np.genfromtxt(f'/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712_1/{name}.qdp',skip_header=3)
     N=int(ccf_data[:,0].shape[0]/2)
     norm=np.max(ccf_data[:,2])
     ax_ccf.errorbar(ccf_data[:,0],ccf_data[:,2]/norm,ccf_data[:,3]/norm,drawstyle='steps-mid',alpha=0.5,label=name)
-    #ax_ccf.errorbar(-ccf_data[:N+1,0],ccf_data[:N+1,2]/norm,ccf_data[:N+1,3]/norm,alpha=0.5,color='r',drawstyle='steps-mid')
+    ax_ccf.errorbar(-ccf_data[:N+1,0],ccf_data[:N+1,2]/norm,ccf_data[:N+1,3]/norm,alpha=0.5,color='r',drawstyle='steps-mid')
     return None
-#plot_data_ccf('ccf_0.8', ax_ccf)
-plot_data_ccf('ccf_0.85', ax_ccf)
-plot_data_ccf('ccf_1', ax_ccf)
+
+plot_data_ccf('ccf_0.75', ax_ccf)
+
 
 ax_ccf.set_xlabel('Delay, s')
 ax_ccf.set_ylabel('CCF \n normed CCF for data')
 ax_ccf.legend()
+ax_ccf.set_xlim(-25,25)
 plt.show()
 
 plt.savefig(f'simulations/ccf_A{A}_dt{deltaT}s_powspec_simulations.png')

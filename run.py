@@ -17,7 +17,7 @@ ObsList=['80102002002','80102002004','80102002006','80102002008',
 
 
 #%% select ObsID
-ObsID=ObsList[0]
+ObsID=ObsList[1]
 nu_obs=NustarObservation(ObsID)
 
 STOP
@@ -174,7 +174,7 @@ plt.show()
 #12 keV - 260
 
 #4-6 keV
-binsize=0.1
+binsize=1
 for mode in ['A','B']:
     nu_obs.make_lc(mode=mode,outdir='lc46_'+str(binsize),stemout='lc46'+mode,pilow='60',pihigh='110',binsize=binsize)
 #lcmath
@@ -193,10 +193,10 @@ for mode in ['A','B']:
 
 #orb corrs
 
-nu_obs.orb_correction_lc(folder='lc46_'+str(binsize),filename=f'lc46AB_sr.lc_bary')
-nu_obs.orb_correction_lc(folder='lc67_'+str(binsize),filename=f'lc67AB_sr.lc_bary')
-nu_obs.orb_correction_lc(folder='lc79_'+str(binsize),filename=f'lc79AB_sr.lc_bary')
-nu_obs.orb_correction_lc(folder='lc712_'+str(binsize),filename=f'lc712AB_sr.lc_bary')
+nu_obs.orb_correction_lc(folder='lc46_'+str(binsize),filename=f'lc46AB_sr.lc_bary',q=0)
+nu_obs.orb_correction_lc(folder='lc67_'+str(binsize),filename=f'lc67AB_sr.lc_bary',q=0)
+nu_obs.orb_correction_lc(folder='lc79_'+str(binsize),filename=f'lc79AB_sr.lc_bary',q=0)
+nu_obs.orb_correction_lc(folder='lc712_'+str(binsize),filename=f'lc712AB_sr.lc_bary',q=0)
 
 
 #%% lc in 4-12 keV  range
@@ -293,114 +293,3 @@ if ObsID in ['80102002002','80102002004','80102002006']:
 for mode in ['A']:
     nu_obs.make_lc(mode=mode,outdir='lc67',stemout='lc67'+mode,
                    pilow='110',pihigh='135',binsize=0.1)
-
-#%% lc in 6-7 keV  range
-
-for mode in ['A']:
-    nu_obs.make_lc(mode=mode,outdir='lc58',stemout='lc58'+mode,
-                   pilow='85',pihigh='160',binsize=0.1)
-
-
-nu_obs.orb_correction_lc(folder='lc58',filename='lc58A_sr.lc_bary')
-
-
-
-#%%
-# TRASH
-'''
-#%%scan
-
-
-nu_obs.scan_spe_results()
-ser=nu_obs.pandas_series()
-ph=np.arange(0,8)/8
-
-eqw=[1000*ser[f'cutoffpl_bin{i}_eqw_gaussian'] for i in range(1,9)]
-fl=[10**ser[f'cutoffpl_bin{i}_flux_cutoffpl_4_12'] for i in range(1,9)]
-
-
-fig,ax=plt.subplots()
-
-ax2=ax.twinx()
-
-#ax.plot(ph,eqw,'r:')
-ax2.plot(ph,fl,'k:o')
-
-
-# efold=np.genfromtxt('/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc412/lc412A_sr.lc_bary_orb_corr.efold8',
-#                     skip_header=3)
-# eph=efold[:,0]
-# er=efold[:,2]
-
-# ax3=ax2.twinx()
-
-# ax3.plot(eph,er,'m:o')
-# ax3.plot(eph-2/8,er,'g-.o')
-plt.show()
-
-#%% zero times
-#os.chdir('/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc412')
-
-os.chdir('/Users/s.bykov/work/xray_pulsars/nustar/results/out90202031004/products/phase_resolved')
-period=4.3764
-
-ff_orb=fits.open('phase_resolved_A_bin1_sr.lc_bary_orb_corr')
-# mjdrefi=ff_bary[1].header['mjdrefi']
-# mjdreff=ff_bary[1].header['mjdreff']
-# timezero=ff_bary[1].header['timezero']
-#time_orig_mjd=(ff_bary[1].data['time']+timezero)/86400+mjdreff+mjdrefi
-time_orb_corr=ff_orb[1].data['time']
-
-
-# ff_bary=fits.open('phase_resolved_A_bin1_sr.lc_bary')
-# mjdrefi=ff_bary[1].header['mjdrefi']
-# mjdreff=ff_bary[1].header['mjdreff']
-# timezero=ff_bary[1].header['timezero']
-# time_bary=(ff_bary[1].data['time']+timezero)+(mjdreff+mjdrefi)*86400
-# diff_time=time_orb_corr[0]-time_bary[0]
-
-
-ff_orig=fits.open('phase_resolved_A_bin1_sr.lc')
-mjdrefi=ff_orig[1].header['mjdrefi']
-mjdreff=ff_orig[1].header['mjdreff']
-timezero=ff_orig[1].header['timezero']
-time_orig=(ff_orig[1].data['time']+timezero)+(mjdreff+mjdrefi)*86400
-diff_time=time_orb_corr[0]-time_orig[0]
-
-
-ff_orb_mean_lc=fits.open('../spe_and_lc/spe_and_lcA_sr.bary_lc_orb_corr')
-# mjdrefi=ff_bary[1].header['mjdrefi']
-# mjdreff=ff_bary[1].header['mjdreff']
-# timezero=ff_bary[1].header['timezero']
-#time_orig_mjd=(ff_bary[1].data['time']+timezero)/86400+mjdreff+mjdrefi
-time_orb_corr_mean_lc=ff_orb_mean_lc[1].data['time']
-
-
-#%% test efolds
-rate=[]
-for i in range(1,9):
-    name=f'phase_resolved_A_bin{i}_sr.lc_bary_orb_corr'
-    tmpf=fits.open(name)
-    tmp=tmpf[1].data['rate'].mean()
-    rate.append(tmp)
-    tmpf.close()
-ph=(np.arange(1,9)-1)/8
-fig,ax=plt.subplots()
-
-ax.plot(ph,rate,'k-.')
-ax.plot(ph+4/8,rate,'k:')
-efoldfile='/Users/s.bykov/work/xray_pulsars/nustar/results/out90202031004/products/spe_and_lc/efoldA8.dat'
-
-efold=np.genfromtxt(efoldfile,
-                    skip_header=3)
-eph=efold[:,0]
-er=efold[:,2]
-
-ax2=ax.twinx()
-
-ax2.plot(eph,er,'g:o')
-
-plt.show()
-
-
-'''
