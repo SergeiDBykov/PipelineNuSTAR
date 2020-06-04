@@ -23,9 +23,9 @@ os.chdir('/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/product
 
 
 
-def simulate_lc712_from_powerspectrum(mean=253.4,rms=sqrt(402.5)/253,dt=10,
+def simulate_lc712_from_powerspectrum(mean=253.4,rms=np.sqrt(402.5)/253,dt=10,
                                    plot_results=0):
-    N=int(10000/dt)
+    N=int(1000/dt)
     sim = simulator.Simulator(N=N, mean=mean ,rms=rms, dt=dt)
 
     w = np.fft.rfftfreq(sim.N, d=sim.dt)[1:]
@@ -55,8 +55,8 @@ def simulate_lc712_from_powerspectrum(mean=253.4,rms=sqrt(402.5)/253,dt=10,
 
     lc = sim.simulate(spectrum)
 
-    tmp=np.random.normal(lc.counts-lc.counts,10)
-    lc.counts=lc.counts+tmp
+    #tmp=np.random.normal(lc.counts-lc.counts,10)
+    #lc.counts=lc.counts+tmp
 
 
     if plot_results:
@@ -122,26 +122,36 @@ ccfs=np.asarray(ccfs)
 
 
 #%%plot simulations
-fig,ax_ccf=plt.subplots(figsize=(16,6))
 
-ax_ccf.errorbar(ccf.lag,ccfs.mean(axis=0),ccfs.std(axis=0),label=f'simulations dT={deltaT}s; A={A}',marker='s')
-ax_ccf.set_xlim(-75,75)
-ax_ccf.set_ylim(-0.2,1.1)
+matplotlib.rcParams['figure.figsize'] = 6.6, 6.6/2
+matplotlib.rcParams['figure.subplot.left']=0.15
+matplotlib.rcParams['figure.subplot.bottom']=0.15
+matplotlib.rcParams['figure.subplot.right']=0.85
+matplotlib.rcParams['figure.subplot.top']=0.9
+plt.subplots_adjust(wspace=2)
+plt.subplots_adjust(hspace=1)
+
+fig,ax_ccf=plt.subplots()
+
+ax_ccf.errorbar(ccf.lag,ccfs.mean(axis=0)*0.25,ccfs.std(axis=0)*0.25,label=f'simulations dT={deltaT}s; A={A}',marker='.',color='k',alpha=0.7)
+ax_ccf.set_xlim(-150,150)
+#ax_ccf.set_ylim(-0.2,1.1)
 
 def plot_data_ccf(name,ax_ccf):
     ccf_data=np.genfromtxt(f'/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712/{name}.qdp',skip_header=3)
     N=int(ccf_data[:,0].shape[0]/2)
-    norm=np.max(ccf_data[:,2])
-    ax_ccf.errorbar(ccf_data[:,0],ccf_data[:,2]/norm,ccf_data[:,3]/norm,drawstyle='steps-mid',alpha=0.5,label=name)
+    norm=1#np.max(ccf_data[:,2])
+    ax_ccf.errorbar(ccf_data[:,0],ccf_data[:,2]/norm,ccf_data[:,3]/norm,drawstyle='steps-mid',alpha=0.8,label=name,color='b')
     #ax_ccf.errorbar(-ccf_data[:N+1,0],ccf_data[:N+1,2]/norm,ccf_data[:N+1,3]/norm,alpha=0.5,color='r',drawstyle='steps-mid')
     return None
 #plot_data_ccf('ccf_0.8', ax_ccf)
 plot_data_ccf('ccf_0.85', ax_ccf)
-plot_data_ccf('ccf_1', ax_ccf)
+#plot_data_ccf('ccf_1', ax_ccf)
 
 ax_ccf.set_xlabel('Delay, s')
-ax_ccf.set_ylabel('CCF \n normed CCF for data')
-ax_ccf.legend()
+ax_ccf.set_ylabel('CCF')
+#ax_ccf.legend()
 plt.show()
 
-plt.savefig(f'simulations/ccf_A{A}_dt{deltaT}s_powspec_simulations.png')
+#plt.savefig(f'simulations/ccf_A{A}_dt{deltaT}s_powspec_simulations.pdf')
+plt.savefig(f'/Users/s.bykov/work/xray_pulsars/nustar/plots_results/fe_line_intensity_0.85.pdf')

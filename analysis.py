@@ -328,3 +328,136 @@ lag_left=lag[:N//2]
 
 plt.plot(lag_left,ccf_right[::-1],color='r')
 plt.show()
+
+
+
+
+#%% power spectrum fun
+
+fig, ax = plt.subplots(1,gridspec_kw={'hspace': 0, 'wspace': 0},figsize=(6.6,6.6/2))
+ax.set_xlabel('Frequency, Hz',fontsize=8)
+ax.set_ylabel('Power, (RMS/mean)^2/Hz')
+
+ObsList=['80102002002',
+ '80102002004',
+ '80102002006',
+ '80102002008',
+ '80102002010']
+
+for ID in ['80102002002','80102002004','80102002006']:
+
+
+    powspec_folder=f'/Users/s.bykov/work/xray_pulsars/nustar/results/out{ID}/products/spe_and_lc/powspec/'
+    powspec_data=np.genfromtxt(powspec_folder+'powspec_AB.qdp',skip_header=3,usecols=(0,1,2,3))
+
+    f,df,P,dP=powspec_data[:,0],powspec_data[:,1],powspec_data[:,2],powspec_data[:,3]
+
+    P=P-np.mean(P[-5:-1])
+
+    ax.loglog(f,P,'.',label=ID)
+    ax.errorbar(f,P,dP,df,fmt='none',color='gray',alpha=0.5)
+
+plt.legend()
+plt.show()
+plt.savefig(savepath+f'pdf_first.pdf',dpi=500)
+
+
+
+
+
+fig, ax = plt.subplots(1,gridspec_kw={'hspace': 0, 'wspace': 0},figsize=(6.6,6.6/2))
+ax.set_xlabel('Frequency, Hz',fontsize=8)
+ax.set_ylabel('Power, (RMS/mean)^2/Hz')
+
+
+ObsList=['80102002002',
+ '80102002004',
+ '80102002006',
+ '80102002008',
+ '80102002010']
+
+for ID in ['80102002008','80102002010']:
+
+
+    powspec_folder=f'/Users/s.bykov/work/xray_pulsars/nustar/results/out{ID}/products/spe_and_lc/powspec/'
+    powspec_data=np.genfromtxt(powspec_folder+'powspec_AB.qdp',skip_header=3,usecols=(0,1,2,3))
+
+    f,df,P,dP=powspec_data[:,0],powspec_data[:,1],powspec_data[:,2],powspec_data[:,3]
+
+    P=P-np.mean(P[-5:-1])
+
+    ax.loglog(f,P,'.',label=ID)
+    ax.errorbar(f,P,dP,df,fmt='none',color='gray',alpha=0.5)
+
+plt.legend()
+plt.show()
+plt.savefig(savepath+f'pdf_second.pdf',dpi=500)
+
+
+
+
+
+#%% power spectrum fun - 7-12 keV
+
+fig, ax = plt.subplots(1,gridspec_kw={'hspace': 0, 'wspace': 0},figsize=(6.6,6.6/2))
+ax.set_xlabel('Frequency, Hz',fontsize=8)
+ax.set_ylabel('Power, (RMS/mean)^2/Hz')
+
+ObsList=['80102002002',
+ '80102002004',
+ '80102002006',
+ '80102002008',
+ '80102002010']
+
+for ID in ['80102002002','80102002004']:
+
+
+    powspec_folder=f'/Users/s.bykov/work/xray_pulsars/nustar/results/out{ID}/products/lc712_0.1/powspec/'
+    powspec_data=np.genfromtxt(powspec_folder+'powspecAB.qdp',skip_header=3,usecols=(0,1,2,3))
+
+    f,df,P,dP=powspec_data[:,0],powspec_data[:,1],powspec_data[:,2],powspec_data[:,3]
+
+    P=P-np.mean(P[-5:-1])
+
+    ax.loglog(f,P,'-',label=ID,drawstyle='steps-mid')
+    ax.errorbar(f,P,dP,df,fmt='none',color='gray',alpha=0.5)
+
+plt.legend()
+plt.xlim(0.0005,1)
+plt.ylim(1e-3,6)
+plt.show()
+plt.savefig(savepath+f'pdf_first.pdf',dpi=500)
+
+
+
+
+
+fig, ax = plt.subplots(1,gridspec_kw={'hspace': 0, 'wspace': 0},figsize=(6.6,6.6/2))
+ax.set_xlabel('Frequency, Hz',fontsize=8)
+ax.set_ylabel('Power, (RMS/mean)^2/Hz')
+
+
+ObsList=['80102002002',
+ '80102002004',
+ '80102002006',
+ '80102002008',
+ '80102002010']
+
+for ID in ['80102002006','80102002008','80102002010']:
+
+
+    powspec_folder=f'/Users/s.bykov/work/xray_pulsars/nustar/results/out{ID}/products/spe_and_lc/powspec/'
+    powspec_data=np.genfromtxt(powspec_folder+'powspec_AB.qdp',skip_header=3,usecols=(0,1,2,3))
+
+    f,df,P,dP=powspec_data[:,0],powspec_data[:,1],powspec_data[:,2],powspec_data[:,3]
+
+    P=P-np.mean(P[-5:-1])
+
+    ax.loglog(f,P,'-',label=ID,drawstyle='steps-mid')
+    ax.errorbar(f,P,dP,df,fmt='none',color='gray',alpha=0.5)
+
+plt.legend()
+plt.xlim(0.0005,1)
+plt.ylim(1e-3,6)
+plt.show()
+plt.savefig(savepath+f'pdf_second.pdf',dpi=500)
