@@ -12,12 +12,16 @@ import seaborn as sns
 sns.set(style='ticks', palette='deep',context='notebook')
 
 
+import seaborn as sns
+sns.set(style='ticks', palette='deep',context='notebook',rc={"xtick.top" : True,'xtick.direction':'inout','ytick.direction':'inout','xtick.minor.visible':True,'ytick.minor.visible':True})
+
+
 ObsList=['80102002002','80102002004','80102002006','80102002008',
          '80102002010','90202031002','90202031004'] #all obsevations
 
 
 #%% select ObsID
-ObsID=ObsList[4]
+ObsID=ObsList[2]
 nu_obs=NustarObservation(ObsID)
 
 STOP
@@ -290,12 +294,14 @@ if ObsID in ['80102002002','80102002004','80102002006']:
 import seaborn as sns
 sns.set(style='ticks', palette='deep',context='notebook')
 
-if ObsID in ['80102002002','80102002004','80102002006']:
+from PipelineXTE.pipeline_core import fit_const_chi_square
+
+if ObsID in ['80102002002','80102002004']:
     #model='comptt_gabslog_sigma_free_temp_fix'
     #fluxpar='flux_gabslog_7_12'
 
     matplotlib.rcParams['figure.figsize'] = 6.6, 6.6/2
-    matplotlib.rcParams['figure.subplot.left']=0.15
+    matplotlib.rcParams['figure.subplot.left']=0.2
     matplotlib.rcParams['figure.subplot.bottom']=0.15
     matplotlib.rcParams['figure.subplot.right']=0.85
     matplotlib.rcParams['figure.subplot.top']=0.9
@@ -321,18 +327,37 @@ if ObsID in ['80102002002','80102002004','80102002006']:
 
 
     #ax_eqw.set_title(nu_obs.ObsID+f'\n  model: {model}')
-    phase,eqw,_=nu_obs.ph_res_param(model=model,param='eqw_gauss',funct=lambda x: 1000*x,
+    phase,eqw,eqw_err=nu_obs.ph_res_param(model=model,param='eqw_gauss',funct=lambda x: 1000*x,
                       ax=ax_eqw,color='c',alpha=0.6)
-    phase,norm,_=nu_obs.ph_res_param(model=model,param='norm4',funct=lambda x: x,
+    eqw_err=eqw_err.max(axis=0)
+    phase,norm,norm_err=nu_obs.ph_res_param(model=model,param='norm4',funct=lambda x: 1000*x,
                       ax=ax_fe_norm,color='r',alpha=0.6)
+    norm_err=norm_err.max(axis=0)
 
     phase,flux712,_=nu_obs.ph_res_param(model=model,param=fluxpar,funct=lambda x: 10**x/1e-8,
                               ax=ax_flux,color='k',ls=':',alpha=0.6)
     phase,flux712,_=nu_obs.ph_res_param(model=model,param=fluxpar,funct=lambda x: 10**x/1e-8,
                               ax=ax_flux2,color='k',ls=':',alpha=0.6)
 
-    ax_eqw.set_ylabel('Iron line \n Eq. width, eV',color='c',fontsize=8)
-    ax_fe_norm.set_ylabel('Iron line \n Norm. ',color='r',fontsize=8)
+
+
+    _,_,chi2_red,pval=fit_const_chi_square(eqw,eqw_err)
+    chi2_red='%.2f'%chi2_red
+
+    _,_,chi2_red_norm,_=fit_const_chi_square(norm,norm_err)
+    chi2_red_norm='%.2f'%chi2_red_norm
+
+
+    ax_eqw.set_ylabel(f'Iron line \n Eq. width, eV \n $\chi^2_{{red}}$={chi2_red}',color='c',fontsize=8)
+    ax_fe_norm.set_ylabel(f'Iron line \n Norm. (a. u.)  \n $\chi^2_{{red}}$={chi2_red_norm}',color='r',fontsize=8)
+
+
+
+
+
+
+    #ax_eqw.set_ylabel('Iron line \n Eq. width, eV',color='c',fontsize=8)
+    #ax_fe_norm.set_ylabel('Iron line \n Norm. ',color='r',fontsize=8)
 
     ax_flux.set_ylabel('Flux (7-12 keV) \n $10^{-8}$ cgs',fontsize=6)
     ax_flux2.set_ylabel('Flux (7-12 keV) \n $10^{-8}$ cgs',fontsize=6)
@@ -352,16 +377,90 @@ if ObsID in ['80102002002','80102002004','80102002006']:
     ax_ccf.plot(lag,ccf,color='b',alpha=0.6)
     #ax_ccf.set_title(f'Flux lags <--- 0 ---> Eqw lags',fontsize=8)
     ax_ccf.set_xlim(-period,+period)
-    ax_ccf.set_xlabel('Eqw Delay, sec')
+    ax_ccf.set_xlabel('Delay, sec')
     ax_ccf.set_ylabel('Pearson r')
 
     plt.show()
 
     fig.tight_layout()
-    sns.despine(fig,top=1,right=0)
+    #sns.despine(fig,top=1,right=0)
     savepath=f'/Users/s.bykov/work/xray_pulsars/nustar/plots_results/'
     plt.savefig(savepath+f'ph_res_{nu_obs.ObsID}_{model}_report.pdf',dpi=500)
 
+if ObsID in ['80102002006']:
+    #model='comptt_gabslog_sigma_free_temp_fix'
+    #fluxpar='flux_gabslog_7_12'
+
+    matplotlib.rcParams['figure.figsize'] = 6.6, 6.6/2
+    matplotlib.rcParams['figure.subplot.left']=0.2
+    matplotlib.rcParams['figure.subplot.bottom']=0.15
+    matplotlib.rcParams['figure.subplot.right']=0.85
+    matplotlib.rcParams['figure.subplot.top']=0.9
+    plt.subplots_adjust(wspace=2)
+    plt.subplots_adjust(hspace=1)
+
+    model='cutoffpl_sigma_03'
+    fluxpar='flux_cutoffpl_7_12'
+    nu_obs=NustarObservation(ObsID)
+    nu_obs.scan_spe_results()
+    ser=nu_obs.pandas_series()
+    fig = plt.figure()
+    rows=4
+    cols=3
+    ax_eqw = plt.subplot2grid((rows,cols), (0, 0), rowspan=2, colspan=3)
+    ax_flux=ax_eqw.twinx()
+
+    ax_fe_norm = plt.subplot2grid((rows,cols), (2, 0), rowspan=2, colspan=3)
+    ax_flux2=ax_fe_norm.twinx()
+
+
+
+
+    #ax_eqw.set_title(nu_obs.ObsID+f'\n  model: {model}')
+    phase,eqw,eqw_err=nu_obs.ph_res_param(model=model,param='eqw_gauss',funct=lambda x: 1000*x,
+                      ax=ax_eqw,color='c',alpha=0.6)
+    eqw_err=eqw_err.max(axis=0)
+    phase,norm,norm_err=nu_obs.ph_res_param(model=model,param='norm4',funct=lambda x: 1000*x,
+                      ax=ax_fe_norm,color='r',alpha=0.6)
+    norm_err=norm_err.max(axis=0)
+
+    phase,flux712,_=nu_obs.ph_res_param(model=model,param=fluxpar,funct=lambda x: 10**x/1e-8,
+                              ax=ax_flux,color='k',ls=':',alpha=0.6)
+    phase,flux712,_=nu_obs.ph_res_param(model=model,param=fluxpar,funct=lambda x: 10**x/1e-8,
+                              ax=ax_flux2,color='k',ls=':',alpha=0.6)
+
+
+
+    _,_,chi2_red,pval=fit_const_chi_square(eqw,eqw_err)
+    chi2_red='%.2f'%chi2_red
+
+    _,_,chi2_red_norm,_=fit_const_chi_square(norm,norm_err)
+    chi2_red_norm='%.2f'%chi2_red_norm
+
+
+    ax_eqw.set_ylabel(f'Iron line \n Eq. width, eV \n $\chi^2_{{red}}$={chi2_red}',color='c',fontsize=8)
+    ax_fe_norm.set_ylabel(f'Iron line \n Norm. (a. u.)  \n $\chi^2_{{red}}$={chi2_red_norm}',color='r',fontsize=8)
+
+
+
+
+
+
+    #ax_eqw.set_ylabel('Iron line \n Eq. width, eV',color='c',fontsize=8)
+    #ax_fe_norm.set_ylabel('Iron line \n Norm. ',color='r',fontsize=8)
+
+    ax_flux.set_ylabel('Flux (7-12 keV) \n $10^{-8}$ cgs',fontsize=6)
+    ax_flux2.set_ylabel('Flux (7-12 keV) \n $10^{-8}$ cgs',fontsize=6)
+
+    ax_fe_norm.set_xlabel('Phase',fontsize=8)
+    ax_eqw.set_title(nu_obs.ObsID)
+
+    plt.show()
+
+    fig.tight_layout()
+    #sns.despine(fig,top=1,right=0)
+    savepath=f'/Users/s.bykov/work/xray_pulsars/nustar/plots_results/'
+    plt.savefig(savepath+f'ph_res_{nu_obs.ObsID}_{model}_report.pdf',dpi=500)
 
 
 

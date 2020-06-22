@@ -409,21 +409,32 @@ ObsList=['80102002002',
  '80102002008',
  '80102002010']
 
-for ID in ['80102002002','80102002004']:
+for ID in ['80102002004','80102002002']:
 
 
     powspec_folder=f'/Users/s.bykov/work/xray_pulsars/nustar/results/out{ID}/products/lc712_0.1/powspec/'
     powspec_data=np.genfromtxt(powspec_folder+'powspecAB.qdp',skip_header=3,usecols=(0,1,2,3))
 
     f,df,P,dP=powspec_data[:,0],powspec_data[:,1],powspec_data[:,2],powspec_data[:,3]
-
-    P=P-np.mean(P[-5:-1])
+    noise=np.mean(P[-5:-1])
+    P=P-noise
 
     ax.loglog(f,P,'-',label=ID,drawstyle='steps-mid')
     ax.errorbar(f,P,dP,df,fmt='none',color='gray',alpha=0.5)
 
+    if ID=='80102002002':
+        model_file=np.genfromtxt(powspec_folder+'mymodel.qdp',skip_header=3,usecols=(0,4,5,6,7,8,9,10))
+        mo_freq=model_file[:,0]
+        mo_pow=model_file[:,1]
+        ax.loglog(mo_freq,mo_pow-noise,'-.',color='gray')
+        ax.loglog(mo_freq,model_file[:,2],'-.',color='gray')
+        ax.loglog(mo_freq,model_file[:,3],'-.',color='gray')
+
+
+
+
 plt.legend()
-plt.xlim(0.0005,1)
+plt.xlim(0.0005,0.5)
 plt.ylim(1e-3,6)
 plt.show()
 plt.savefig(savepath+f'pdf_first.pdf',dpi=500)

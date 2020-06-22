@@ -101,7 +101,7 @@ def find_ccf(lc712,lc67,plot=0,deltaT=0,A=0):
     return CCF_obj_crosscorr
 
 #%% test simulator
-simulate_lc712_from_powerspectrum(plot_results=1)
+#simulate_lc712_from_powerspectrum(plot_results=1)
 
 
 #%% simulate
@@ -110,7 +110,7 @@ for i in range(100):
     print(i)
     lc712=simulate_lc712_from_powerspectrum()
     A=0.7
-    deltaT=30
+    deltaT=50
     lc67=iron_band_model_lc(lc712, A, deltaT)
 
     #lc712=lc712.rebin(1)
@@ -133,7 +133,7 @@ plt.subplots_adjust(hspace=1)
 
 fig,ax_ccf=plt.subplots()
 
-ax_ccf.errorbar(ccf.lag,ccfs.mean(axis=0)*0.25,ccfs.std(axis=0)*0.25,label=f'simulations dT={deltaT}s; A={A}',marker='.',color='k',alpha=0.7)
+ax_ccf.errorbar(ccf.lag,ccfs.mean(axis=0)*0.25,ccfs.std(axis=0)*0.25,label=f'simulations dT={deltaT}s; A={A}',marker='.',color='k',alpha=0.7,zorder=-10)
 ax_ccf.set_xlim(-150,150)
 #ax_ccf.set_ylim(-0.2,1.1)
 
@@ -142,7 +142,7 @@ def plot_data_ccf(name,ax_ccf):
     N=int(ccf_data[:,0].shape[0]/2)
     norm=1#np.max(ccf_data[:,2])
     ax_ccf.errorbar(ccf_data[:,0],ccf_data[:,2]/norm,ccf_data[:,3]/norm,drawstyle='steps-mid',alpha=0.8,label=name,color='b')
-    #ax_ccf.errorbar(-ccf_data[:N+1,0],ccf_data[:N+1,2]/norm,ccf_data[:N+1,3]/norm,alpha=0.5,color='r',drawstyle='steps-mid')
+    ax_ccf.errorbar(-ccf_data[:N+1,0],ccf_data[:N+1,2]/norm,ccf_data[:N+1,3]/norm,alpha=0.5,color='r',drawstyle='steps-mid')
     return None
 #plot_data_ccf('ccf_0.8', ax_ccf)
 plot_data_ccf('ccf_0.85', ax_ccf)
@@ -150,8 +150,8 @@ plot_data_ccf('ccf_0.85', ax_ccf)
 
 ax_ccf.set_xlabel('Delay, s')
 ax_ccf.set_ylabel('CCF')
-#ax_ccf.legend()
+ax_ccf.legend()
 plt.show()
 
 #plt.savefig(f'simulations/ccf_A{A}_dt{deltaT}s_powspec_simulations.pdf')
-plt.savefig(f'/Users/s.bykov/work/xray_pulsars/nustar/plots_results/fe_line_intensity_0.85.pdf')
+#plt.savefig(f'/Users/s.bykov/work/xray_pulsars/nustar/plots_results/fe_line_intensity_0.85.pdf')

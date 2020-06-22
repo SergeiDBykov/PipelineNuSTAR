@@ -8,9 +8,9 @@ Created on Fri Apr 24 11:42:22 2020
 
 from PipelineNuSTAR.core import *
 
-os.chdir('/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/lc712_2')
+os.chdir('/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002006/products/lc712_0.1/powspec')
 
-filename='powspec/powspec712.qdp'
+filename='powspecAB.qdp'
 
 powspec_data=np.genfromtxt(filename,skip_header=3,usecols=(0,1,2,3))
 
@@ -29,4 +29,4 @@ xspec_data[:,1]=f+df
 xspec_data[:,2]=2*P*df
 xspec_data[:,3]=2*dP*df
 
-np.savetxt('powspec712_xspec.txt',xspec_data,delimiter=' ')
+np.savetxt('powspecAB_xspec.txt',xspec_data,delimiter=' ')
