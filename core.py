@@ -756,9 +756,9 @@ class NustarObservation():
             ax_flux=ax_eqw.twinx()
 
             ax_eqw.set_title(self.ObsID+f'\n  model: {model}')
-            self.ph_res_param(model=model,param='eqw_gauss',funct=lambda x: 1000*x,
+            self.ph_res_param(model=model,param='LineE2',funct=lambda x: x,
                               ax=ax_eqw,color='r',alpha=1)
-            ax_eqw.set_ylabel('Iron line eqw',color='r')
+            ax_eqw.set_ylabel('Iron line energy',color='r')
 
             self.ph_res_param(model=model,param='flux_gabslog_7_12',funct=lambda x: 10**x/1e-8,
                               ax=ax_flux,color='k',alpha=0.6)
@@ -798,13 +798,13 @@ class NustarObservation():
             fig = plt.figure()
             rows=8
             cols=3
-            ax_eqw = plt.subplot2grid((rows,cols), (0, 0), rowspan=2, colspan=3)
-            ax_flux=ax_eqw.twinx()
+            ax_eline = plt.subplot2grid((rows,cols), (0, 0), rowspan=2, colspan=3)
+            ax_flux=ax_eline.twinx()
 
-            ax_eqw.set_title(self.ObsID+f'\n  model: {model}')
-            self.ph_res_param(model=model,param='eqw_gauss',funct=lambda x: 1000*x,
-                              ax=ax_eqw,color='r',alpha=1)
-            ax_eqw.set_ylabel('Iron line eqw',color='r')
+            ax_eline.set_title(self.ObsID+f'\n  model: {model}')
+            self.ph_res_param(model=model,param='LineE2',funct=lambda x: x,
+                              ax=ax_eline,color='r',alpha=1)
+            ax_eline.set_ylabel('Iron line energy',color='r')
 
             self.ph_res_param(model=model,param='flux_cutoffpl_7_12',funct=lambda x: 10**x/1e-8,
                               ax=ax_flux,color='k',alpha=0.6)

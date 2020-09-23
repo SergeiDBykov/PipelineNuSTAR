@@ -21,7 +21,7 @@ ObsList=['80102002002','80102002004','80102002006','80102002008',
 
 
 #%% select ObsID
-ObsID=ObsList[2]
+ObsID=ObsList[0]
 nu_obs=NustarObservation(ObsID)
 
 STOP

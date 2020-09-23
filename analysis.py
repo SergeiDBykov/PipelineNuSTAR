@@ -472,3 +472,117 @@ plt.xlim(0.0005,1)
 plt.ylim(1e-3,6)
 plt.show()
 plt.savefig(savepath+f'pdf_second.pdf',dpi=500)
+
+
+
+
+#%% line energy variations
+
+
+
+matplotlib.rcParams['figure.figsize'] = 10, 10/2
+matplotlib.rcParams['figure.subplot.left']=0.15
+matplotlib.rcParams['figure.subplot.bottom']=0.15
+matplotlib.rcParams['figure.subplot.right']=0.85
+matplotlib.rcParams['figure.subplot.top']=0.95
+
+
+import seaborn as sns
+sns.set(style='ticks', palette='deep',context='notebook',rc={"xtick.top" : True,'xtick.direction':'inout','ytick.direction':'inout','xtick.minor.visible':True,'ytick.minor.visible':True})
+
+
+def vals_and_errors(ObsParams,name,funct=lambda x: x):
+    if isinstance(ObsParams,pd.core.frame.DataFrame):
+        par,Min,Max=funct(ObsParams[name].values),funct(ObsParams[name+'_lo'].values),funct(ObsParams[name+'_hi'].values)
+    elif isinstance(ObsParams,pd.core.series.Series):
+        par,Min,Max=funct(ObsParams[name]),funct(ObsParams[name+'_lo']),funct(ObsParams[name+'_hi'])
+
+    low = par - Min
+    hi  =  Max - par
+    parr = par
+
+    err=np.vstack((low,hi))
+    #return np.array((parr,err))
+    return parr,err
+
+
+
+
+
+data=np.genfromtxt('/Users/s.bykov/work/xray_pulsars/nustar/results/out80102002002/products/phase_resolved/cutoffpl_sigma_03.dat')
+
+N_sp=(data[0,1])
+spe_num=data[:,0]
+
+
+data=np.vstack((data,data))
+nph=data[0,1]
+data[:,0]=np.arange(1,nph*2+1) #create new spe_num
+spe_num=data[:,0]
+phase=((spe_num-1)/(N_sp))
+
+flux312=data[:,10]
+
+
+
+norm_line=data[:,7]*1000
+norm_line_low=norm_line-data[:,8]*1000
+norm_line_hi=data[:,9]*1000-norm_line
+norm_line_err=np.vstack((norm_line_low, norm_line_hi))
+
+
+eline=data[:,4]
+eline_lo=eline-data[:,5]
+eline_hi=data[:,6]-eline
+eline_err=np.vstack((eline_lo, eline_hi))
+
+chi2_red=data[:,2]
+
+
+
+
+fig = plt.figure()
+rows=6
+cols=3
+#(rows,cols), (y,x) <- those are coordinates of an axis in subplots
+ax_norm = plt.subplot2grid((rows,cols), (0, 0), rowspan=2, colspan=3)
+ax_efold=ax_norm.twinx()
+
+#ax_fe_flux = plt.subplot2grid((rows,cols), (2, 0), rowspan=2, colspan=3)
+#ax_efold_2=ax_fe_flux.twinx()
+
+ax_eline = plt.subplot2grid((rows,cols), (2, 0), rowspan=2, colspan=3)
+ax_efold_3=ax_eline.twinx()
+
+
+ax_efold.errorbar(phase,flux312,0,color='k',label='Flux 7-12',drawstyle='steps-mid',ls=':',alpha=0.6)
+ax_norm.errorbar(phase,norm_line,norm_line_err,color='c',drawstyle='steps-mid',alpha=0.6)
+
+
+
+#ax_eqw.set_ylabel(f'Iron line \n Eq. width, eV \n $\chi^2_{{red}}$={chi2_red} \n -log(p)={logp}',color='c',fontsize=8)
+ax_norm.set_ylabel(f'Iron line \n norm, (a.u.)',color='c',fontsize=8)
+
+ax_efold.set_ylabel('Flux (3-12 keV) \n $10^{-8}$ cgs',fontsize=6)
+ax_norm.set_xlabel('Phase',fontsize=8)
+
+
+ax_efold_3.errorbar(phase,flux312,0,color='k',label='line energy',drawstyle='steps-mid',ls=':',alpha=0.6)
+ax_efold_3.set_ylabel('Flux (3-12 keV) \n $10^{-8}$ cgs',fontsize=6)
+ax_eline.errorbar(phase,eline,eline_err,color='r',drawstyle='steps-mid',alpha=0.6)
+ax_eline.set_ylabel('Line energy, keV',fontsize=6)
+ax_norm.set_xlabel('Phase',fontsize=8)
+ax_eline.axhline(6.4,color='k',alpha=0.6,zorder=-10)
+
+ax_chi2= plt.subplot2grid((rows,cols), (4, 0), rowspan=2, colspan=3)
+ax_chi2.plot(phase,chi2_red,color='r')
+ax_chi2.set_ylabel('$\chi^2_{red}$',fontsize=8,color='r')
+
+#fig.tight_layout()
+
+plt.show()
+
+
+
+
+
